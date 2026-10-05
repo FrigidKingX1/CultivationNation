@@ -56,7 +56,7 @@ def main():
             "power": power,
             "waves": 3 + tier,
             "reward_mult": REWARD_MULT,
-            "provisional": True,
+            
         })
     lines = ["["]
     for i, g in enumerate(out):

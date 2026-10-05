@@ -344,6 +344,12 @@ func _test_filter() -> void:
 		ui.call("log_line", "bound-probe", "info")
 	var grew: int = int(Performance.get_monitor(Performance.OBJECT_COUNT)) - before
 	_check(grew < 450, "chronicle document stays bounded (grew=" + str(grew) + ")")
+	# P23c ring-reuse proof (Q27): a second full ring must recycle, not pile.
+	var mid: int = int(Performance.get_monitor(Performance.OBJECT_COUNT))
+	for i in 600:
+		ui.call("log_line", "reuse-probe", "info")
+	var grew2: int = int(Performance.get_monitor(Performance.OBJECT_COUNT)) - mid
+	_check(abs(grew2) <= 5, "chronicle ring recycles (delta=" + str(grew2) + ")")
 
 func _anim_setup() -> void:
 	# Arms the bar tween before the wall wait so it settles inside it.

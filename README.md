@@ -30,17 +30,18 @@ $P = "E:\ClaudeATHome\Projects\Cultivation Nation"
 & $E --headless --path $P -s "res://tests/p11_test.gd"              # pacing/bands (21)
 & $E --headless --path $P -s "res://tests/p12_test.gd"              # cultivation systems (130)
 & $E --headless --path $P -s "res://tests/p13_test.gd"              # rework (35)
-& $E --headless --path $P -s "res://tests/p14_test.gd"              # presentation (72)
+& $E --headless --path $P -s "res://tests/p14_test.gd"              # presentation (73)
 & $E --headless --path $P -s "res://tests/p15_test.gd"              # depth (64)
 & $E --headless --path $P -s "res://tests/p16_test.gd"              # reliability (12)
-& $E --headless --path $P -s "res://tests/p17_test.gd"              # interface (82)
+& $E --headless --path $P -s "res://tests/p17_test.gd"              # interface (83)
 & $E --headless --path $P -s "res://tests/p21_test.gd"              # adopted systems (66)
 & $E --headless --path $P -s "res://tests/guardians_test.gd"         # wardens/duels (79)
 & $E --headless --path $P -s "res://tests/save_v12_migration_test.gd" # save v12 (9)
+& $E --headless --path $P -s "res://tests/p23_world_test.gd"          # island world (24)
 & $E --headless --path $P -s "res://tests/soak_test.gd"             # 210y soak (exit code)
 & $E --path "E:\Godot Game Engine\Godot_v4.6.3-stable_win64.exe\Godot_v4.6.3-stable_win64.exe" --path $P  # play
 ```
-25 suites, 1049 counted checks (soak passes by exit code). Ground truth
+26 suites, 1075 counted checks (soak passes by exit code). Ground truth
 per release: `docs/qa/p22/sweep_summary.csv`.
 
 ## Loop
@@ -88,7 +89,7 @@ Hybrid number formatting to 1e51.
 - Pause-before-death, 43 achievements (realms to 50, systems, True Bestiary).
   Old 3-column UI replaced in P17 (route planner cut in P13: dead with no
   setter or UI).
-- Macro-tier wardens (P23): 7 generated guardians, one per tier, bar the
+- Macro-tier wardens (M2–M5): 7 generated guardians, one per tier, bar the
   breakthrough leaving their tier (including the final ladder-clearing
   crossing). Deterministic N-wave duels on the tribulation-power scale;
   proportional defeat costs, first-win rewards, victories persist rebirth
@@ -135,21 +136,22 @@ depth. Typical (non-optimal) play runs several times slower. Clearing the
 ladder records a permanent victory (Summit Cleared). Lower bands (clear ≥
 30k ticks, lives ≥ 5) tripwire against silent trivialization.
 
-## Presentation (2.5D, P14)
+## Presentation (true-3D islands, P23)
 
-Fixed orthographic 3/4 camera over a procedural ink-wash diorama: meditation
-platform, 30 seeded peaks in 3 parallax rings, 9 zone palettes, seasonal
-weather, tier light grades. The cultivator is a billboard (robe tinted by
-dominant root) with a mind-colored aura that thickens with toxicity/deviation;
-soul charm, gear ring, and a readiness ring (green/amber/red) ride along.
-Tribulations play buildup → strikes → outcome-scaled burst and shake;
-death slumps grey, rebirth dawn-relights. A post-process ink shader (edge
-lines, paper grain, brush-bleed grade) sits on the world view; the HUD is a
-translucent overlay with a scrolling action column. All sprites route through
-`SpriteFactory.make_sprite` (swappable art); particle/node budgets are
-test-enforced. Sect duties dot the grounds, the cauldron tracks herb stock,
-deviation flaws glow red on the cultivator, and beasts come in four
-silhouettes. Measured 60–90 FPS live; headless suites unaffected.
+Nine floating zone islands in a cloud sea under a player-driven perspective
+orbit rig (drag-rotate, clamped wheel zoom, F12 debug fly; input suspends
+while panels are open). Islands generate deterministically from the hunt-map
+seed; active island plus ring-neighbors resident; zone gates stand as
+presentation-only walls (enforcement stays engine-side). The cultivator
+billboard (robe tinted by dominant root) rides the active island with its
+mind-colored aura, soul charm, gear ring, and green/amber/red readiness
+ring. Tribulations strike over the cultivator with outcome-scaled bursts
+and shake; death slumps grey, rebirth dawn-relights. Seasonal weather,
+tier light grades, beast markers, sect dots, cauldron/herb stock, deviation
+glow, and warden shrines (gold flame on tier-threshold isles, white
+sentinel at the ladder's end) complete the scene. Ink grade retired in
+favor of pure low-poly; modal blur and button shine retained. Node and
+particle budgets remain test-enforced. Headless suites unaffected.
 
 ## Builds
 
