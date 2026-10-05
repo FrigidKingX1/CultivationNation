@@ -1,0 +1,314 @@
+[
+ {
+  "id": "beast_pebbleback",
+  "name": "Pebbleback Tortoise",
+  "zone": "Dewfield",
+  "element": "water",
+  "power": 3.0,
+  "min_realm": 0
+ },
+ {
+  "id": "beast_mistralhare",
+  "name": "Mistral Hare",
+  "zone": "Dewfield",
+  "element": "water",
+  "power": 5.0,
+  "min_realm": 0
+ },
+ {
+  "id": "beast_reedlurker",
+  "name": "Reedlurker",
+  "zone": "Dewfield",
+  "element": "water",
+  "power": 8.0,
+  "min_realm": 0
+ },
+ {
+  "id": "beast_cinderfox",
+  "name": "Cinderfox",
+  "zone": "Ashbarrow",
+  "element": "fire",
+  "power": 14.0,
+  "min_realm": 2
+ },
+ {
+  "id": "beast_slagwing",
+  "name": "Slagwing",
+  "zone": "Ashbarrow",
+  "element": "fire",
+  "power": 22.0,
+  "min_realm": 2
+ },
+ {
+  "id": "beast_ashboar",
+  "name": "Ashfall Boar",
+  "zone": "Ashbarrow",
+  "element": "fire",
+  "power": 30.0,
+  "min_realm": 2
+ },
+ {
+  "id": "beast_lanterneel",
+  "name": "Lantern Eel",
+  "zone": "Gloamdeep",
+  "element": "metal",
+  "power": 45.0,
+  "min_realm": 4
+ },
+ {
+  "id": "beast_gloomwarden",
+  "name": "Gloomcap Warden",
+  "zone": "Gloamdeep",
+  "element": "metal",
+  "power": 60.0,
+  "min_realm": 4
+ },
+ {
+  "id": "beast_hollowstag",
+  "name": "Hollow-Antler Stag",
+  "zone": "Gloamdeep",
+  "element": "metal",
+  "power": 80.0,
+  "min_realm": 4
+ },
+ {
+  "id": "beast_mirrorserpent",
+  "name": "Deepmirror Serpent",
+  "zone": "Gloamdeep",
+  "element": "metal",
+  "power": 110.0,
+  "min_realm": 4
+ },
+ {
+  "id": "beast_siltmaw",
+  "name": "Siltmaw",
+  "zone": "Murkfen",
+  "element": "wood",
+  "power": 150.0,
+  "min_realm": 6
+ },
+ {
+  "id": "beast_fenmoth",
+  "name": "Fenlight Moth",
+  "zone": "Murkfen",
+  "element": "wood",
+  "power": 200.0,
+  "min_realm": 6
+ },
+ {
+  "id": "beast_bogbell",
+  "name": "Bogbell Toad",
+  "zone": "Murkfen",
+  "element": "wood",
+  "power": 260.0,
+  "min_realm": 6
+ },
+ {
+  "id": "beast_greyheron",
+  "name": "Grey Heron",
+  "zone": "Murkfen",
+  "element": "wood",
+  "power": 340.0,
+  "min_realm": 6
+ },
+ {
+  "id": "beast_shalewing",
+  "name": "Shalewing",
+  "zone": "Stonehollow",
+  "element": "earth",
+  "power": 450.0,
+  "min_realm": 8
+ },
+ {
+  "id": "beast_gravelmaw",
+  "name": "Gravelmaw",
+  "zone": "Stonehollow",
+  "element": "earth",
+  "power": 560.0,
+  "min_realm": 8
+ },
+ {
+  "id": "beast_cairnhowler",
+  "name": "Cairn Howler",
+  "zone": "Stonehollow",
+  "element": "earth",
+  "power": 690.0,
+  "min_realm": 8
+ },
+ {
+  "id": "beast_dustmantleox",
+  "name": "Dustmantle Ox",
+  "zone": "Stonehollow",
+  "element": "earth",
+  "power": 840.0,
+  "min_realm": 8
+ },
+ {
+  "id": "beast_lodestonetick",
+  "name": "Lodestone Tick",
+  "zone": "Stonehollow",
+  "element": "earth",
+  "power": 1000.0,
+  "min_realm": 8
+ },
+ {
+  "id": "beast_fogfincarp",
+  "name": "Fogfin Carp",
+  "zone": "Stillmere",
+  "element": "water",
+  "power": 1400.0,
+  "min_realm": 16
+ },
+ {
+  "id": "beast_raincallerfrog",
+  "name": "Raincaller Frog",
+  "zone": "Stillmere",
+  "element": "water",
+  "power": 1800.0,
+  "min_realm": 16
+ },
+ {
+  "id": "beast_undertowcrab",
+  "name": "Undertow Crab",
+  "zone": "Stillmere",
+  "element": "water",
+  "power": 2200.0,
+  "min_realm": 16
+ },
+ {
+  "id": "beast_palefin",
+  "name": "Palefin",
+  "zone": "Stillmere",
+  "element": "water",
+  "power": 2600.0,
+  "min_realm": 16
+ },
+ {
+  "id": "beast_drownbell",
+  "name": "Drownbell",
+  "zone": "Stillmere",
+  "element": "water",
+  "power": 3000.0,
+  "min_realm": 16
+ },
+ {
+  "id": "beast_searscale",
+  "name": "Searscale",
+  "zone": "Pyrefen",
+  "element": "fire",
+  "power": 4200.0,
+  "min_realm": 24
+ },
+ {
+  "id": "beast_pyrehound",
+  "name": "Pyre Hound",
+  "zone": "Pyrefen",
+  "element": "fire",
+  "power": 5200.0,
+  "min_realm": 24
+ },
+ {
+  "id": "beast_flamestalker",
+  "name": "Flamestalker",
+  "zone": "Pyrefen",
+  "element": "fire",
+  "power": 6300.0,
+  "min_realm": 24
+ },
+ {
+  "id": "beast_burntbarkape",
+  "name": "Burntbark Ape",
+  "zone": "Pyrefen",
+  "element": "fire",
+  "power": 7600.0,
+  "min_realm": 24
+ },
+ {
+  "id": "beast_wildfirewisp",
+  "name": "Wildfire Wisp",
+  "zone": "Pyrefen",
+  "element": "fire",
+  "power": 9000.0,
+  "min_realm": 24
+ },
+ {
+  "id": "beast_anvilback",
+  "name": "Anvilback",
+  "zone": "Whitefoundry",
+  "element": "metal",
+  "power": 13000.0,
+  "min_realm": 32
+ },
+ {
+  "id": "beast_quenchling",
+  "name": "Quenchling",
+  "zone": "Whitefoundry",
+  "element": "metal",
+  "power": 16000.0,
+  "min_realm": 32
+ },
+ {
+  "id": "beast_hammerfallcrane",
+  "name": "Hammerfall Crane",
+  "zone": "Whitefoundry",
+  "element": "metal",
+  "power": 19000.0,
+  "min_realm": 32
+ },
+ {
+  "id": "beast_tongsprite",
+  "name": "Tongsprite",
+  "zone": "Whitefoundry",
+  "element": "metal",
+  "power": 23000.0,
+  "min_realm": 32
+ },
+ {
+  "id": "beast_steelbloom",
+  "name": "Steelbloom",
+  "zone": "Whitefoundry",
+  "element": "metal",
+  "power": 27000.0,
+  "min_realm": 32
+ },
+ {
+  "id": "beast_briarthorn",
+  "name": "Briarthorn",
+  "zone": "Thornwake",
+  "element": "wood",
+  "power": 40000.0,
+  "min_realm": 40
+ },
+ {
+  "id": "beast_thornmother",
+  "name": "Thornmother",
+  "zone": "Thornwake",
+  "element": "wood",
+  "power": 50000.0,
+  "min_realm": 40
+ },
+ {
+  "id": "beast_leafcutterking",
+  "name": "Leafcutter King",
+  "zone": "Thornwake",
+  "element": "wood",
+  "power": 60000.0,
+  "min_realm": 40
+ },
+ {
+  "id": "beast_rootboundelk",
+  "name": "Rootbound Elk",
+  "zone": "Thornwake",
+  "element": "wood",
+  "power": 70000.0,
+  "min_realm": 40
+ },
+ {
+  "id": "beast_pollentyrant",
+  "name": "Pollen Tyrant",
+  "zone": "Thornwake",
+  "element": "wood",
+  "power": 80000.0,
+  "min_realm": 40
+ }
+]

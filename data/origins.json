@@ -1,0 +1,6 @@
+[
+	{"id": "origin_wayfarer", "name": "Wayfarer", "qi_mult": 1.0, "lifespan_bonus": 0, "desc": "Balanced drifter. No bonus, no penalty."},
+	{"id": "origin_ironhide", "name": "Ironhide", "qi_mult": 0.9, "lifespan_bonus": 20, "desc": "Sturdy frame. Slower Qi, longer lifespan."},
+	{"id": "origin_cinder", "name": "Cinder Pact", "qi_mult": 1.25, "lifespan_bonus": -5, "desc": "Volatile spark. Faster Qi, shorter years."},
+	{"id": "origin_beastkin", "name": "Beast Kin", "qi_mult": 1.1, "lifespan_bonus": 5, "desc": "Beast-bonded. Brisk Qi, slightly longer years."}
+]

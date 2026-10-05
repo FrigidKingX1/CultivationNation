@@ -1,0 +1,5 @@
+[
+ {"id": "dao_flow", "name": "Flow of the River", "desc": "+10% Qi gain per rank. The river remembers every vessel.", "max": 20, "effect": 0.1},
+ {"id": "dao_years", "name": "Long Years", "desc": "+5 years of lifespan per rank. Time, negotiated.", "max": 20, "effect": 5.0},
+ {"id": "dao_tithe", "name": "Deep Tithe", "desc": "+10% karma yield per rank. Depth pays its respects.", "max": 20, "effect": 0.1}
+]

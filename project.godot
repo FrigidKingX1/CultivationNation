@@ -1,0 +1,40 @@
+; Engine configuration file.
+; Cultivation Nation — Godot 4.6.3. Original story/art/saves; open-source
+; libraries, music, and UI-kit references vendored per ATTRIBUTION.md (P20+).
+
+config_version=5
+
+[application]
+
+config/name="Cultivation Nation"
+config/version="0.20.1"
+config/description="Clean-room cultivation idle incremental. Original code, text, and assets. Mechanics-inspired only."
+run/main_scene="res://scenes/Main.tscn"
+config/features=PackedStringArray("4.6", "GL Compatibility")
+
+[autoload]
+
+GameEngine="*res://scripts/GameEngine.gd"
+SaveManager="*res://scripts/SaveManager.gd"
+ContentDB="*res://scripts/ContentDB.gd"
+SfxSynth="*res://scripts/SfxSynth.gd"
+MaaackMusic="*res://addons/maaacks_music_controller/base/scenes/autoloads/project_music_controller.tscn"
+MaaackUISound="*res://addons/maaacks_ui_sound_controller/base/scenes/autoloads/project_ui_sound_controller.tscn"
+
+[display]
+
+window/size/viewport_width=1280
+window/size/viewport_height=720
+window/stretch/mode="canvas_items"
+window/stretch/aspect="expand"
+
+[rendering]
+
+# P14: Forward+ (Windows-only target; Web/Compatibility dropped in P13).
+renderer/rendering_method="forward_plus"
+renderer/rendering_method.mobile="forward_plus"
+textures/vram_compression/import_etc2_astc=true
+
+[debug]
+
+gdscript/warnings/unassigned_variable=1

@@ -1,0 +1,102 @@
+extends Node
+## ContentDB autoload — loads data/*.json, validates schema. Original code.
+## Authored content lives in data files; saves store only IDs.
+
+var realms: Array = []
+var origins: Array = []
+var techniques: Array = []
+var beasts: Array = []
+var gear: Array = []
+var achievements: Array = []
+var prestige: Array = []
+var reveal: Array = []
+var loaded: bool = false
+
+func _ready() -> void:
+	load_all()
+
+func load_all() -> bool:
+	realms = _load_json_array("res://data/realms.json")
+	origins = _load_json_array("res://data/origins.json")
+	techniques = _load_json_array("res://data/techniques.json")
+	beasts = _load_json_array("res://data/beasts.json")
+	gear = _load_json_array("res://data/gear.json")
+	achievements = _load_json_array("res://data/achievements.json")
+	prestige = _load_json_array("res://data/prestige.json")
+	reveal = _load_json_array("res://data/reveal.json")
+	loaded = true
+	return validate()
+
+func gear_defs() -> Dictionary:
+	var defs: Dictionary = {}
+	for g in gear:
+		defs[str((g as Dictionary).get("id", ""))] = {
+			"base_mult": float((g as Dictionary).get("base_mult", 0.0)),
+			"max_level": int((g as Dictionary).get("max_level", 0)),
+		}
+	return defs
+
+func gear_entry(id: String) -> Dictionary:
+	for g in gear:
+		if str((g as Dictionary).get("id", "")) == id:
+			return g
+	return {}
+
+func beast_ids_in_order() -> Array:
+	var ids: Array = []
+	for b in beasts:
+		ids.append(str(b.get("id", "")))
+	return ids
+
+func origin_by_id(id: String) -> Dictionary:
+	for o in origins:
+		if str(o.get("id", "")) == id:
+			return o
+	return {}
+
+func _load_json_array(path: String) -> Array:
+	if not FileAccess.file_exists(path):
+		return []
+	var f: FileAccess = FileAccess.open(path, FileAccess.READ)
+	if f == null:
+		return []
+	var parsed: Variant = JSON.parse_string(f.get_as_text())
+	f.close()
+	if typeof(parsed) == TYPE_ARRAY:
+		return parsed
+	return []
+
+func validate() -> bool:
+	for r in realms:
+		if not (r.has("id") and r.has("name") and r.has("qi_required") and r.has("macro_tier") and r.has("macro_name") and r.has("lifespan") and r.has("waves") and r.has("trib_power")):
+			push_error("ContentDB: bad realm entry")
+			return false
+	for o in origins:
+		if not (o.has("id") and o.has("name") and o.has("qi_mult") and o.has("lifespan_bonus")):
+			push_error("ContentDB: bad origin entry")
+			return false
+	for t in techniques:
+		if not (t.has("id") and t.has("name") and t.has("curve") and t.has("wear") and t.has("perk")):
+			push_error("ContentDB: bad technique entry")
+			return false
+	for b in beasts:
+		if not (b.has("id") and b.has("name") and b.has("zone") and b.has("element") and b.has("power") and b.has("min_realm")):
+			push_error("ContentDB: bad beast entry")
+			return false
+	for g in gear:
+		if not (g.has("id") and g.has("name") and g.has("base_mult") and g.has("max_level")):
+			push_error("ContentDB: bad gear entry")
+			return false
+	for a in achievements:
+		if not (a.has("id") and a.has("name") and a.has("desc") and a.has("stat") and a.has("value")):
+			push_error("ContentDB: bad achievement entry")
+			return false
+	for p in prestige:
+		if not (p.has("id") and p.has("name") and p.has("desc") and p.has("max") and p.has("effect")):
+			push_error("ContentDB: bad prestige entry")
+			return false
+	for r in reveal:
+		if not (r.has("tab") and r.has("stat") and r.has("value") and r.has("line")):
+			push_error("ContentDB: bad reveal entry")
+			return false
+	return true

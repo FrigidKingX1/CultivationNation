@@ -1,0 +1,15 @@
+# Godot import cache / editor state
+.godot/
+export.cfg
+
+# Build outputs — regenerable via: tools\run.ps1 export-win
+# (the native big-number DLL beside the export is preserved in build/win
+# on this machine; see docs/qa/baseline_BUILD_MANIFEST.sha256 after M0)
+build/
+
+# QA screenshots live archived under docs/qa/ (see P22 cleanup)
+tools/shots/
+
+# OS noise
+Thumbs.db
+desktop.ini

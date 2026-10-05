@@ -1,0 +1,9 @@
+[
+	{"id": "gear_riverband", "name": "Riverstone Band", "base_mult": 0.05, "max_level": 5, "desc": "Smooth band worn against the wrist. Steadies breath."},
+	{"id": "gear_cinderlamp", "name": "Cinder Lamp", "base_mult": 0.05, "max_level": 5, "desc": "Small shuttered lamp. Burns low and even."},
+	{"id": "gear_pineclasp", "name": "Pine Clasp", "base_mult": 0.08, "max_level": 3, "desc": "Resin-set clasp. Holds warmth through cold nights."},
+	{"id": "gear_dewflask", "name": "Dew Flask", "base_mult": 0.08, "max_level": 3, "desc": "Sealed flask of morning dew. A sip before practice."},
+	{"id": "gear_starcompass", "name": "Star Compass", "base_mult": 0.12, "max_level": 2, "desc": "Old wayfinder's disc. Points somewhere worth going."},
+	{"id": "gear_mothcloak", "name": "Mothwing Cloak", "base_mult": 0.05, "max_level": 5, "desc": "Dusk-grey cloak. Muffles steps on wet ground."},
+	{"id": "gear_frostcoin", "name": "Frostfire Coin", "base_mult": 0.08, "max_level": 3, "desc": "Cold one face, warm the other. A reminder."}
+]

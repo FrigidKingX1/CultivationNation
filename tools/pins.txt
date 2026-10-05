@@ -1,0 +1,4 @@
+GODOT_CONSOLE=E:\Godot Game Engine\Godot_v4.6.3-stable_win64.exe\Godot_v4.6.3-stable_win64_console.exe
+GODOT_VERSION=4.6.3.stable.official.7d41c59c4
+PROJECT_DIR=E:\ClaudeATHome\Projects\Cultivation Nation
+RENDERER=gl_compatibility

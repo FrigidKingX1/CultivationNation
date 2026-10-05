@@ -1,0 +1,11 @@
+[
+ {"tab": "Arts", "stat": "", "value": 0, "line": ""},
+ {"tab": "Records", "stat": "", "value": 0, "line": ""},
+ {"tab": "Settings", "stat": "", "value": 0, "line": ""},
+ {"tab": "Beasts", "stat": "realm", "value": 2, "line": "The wilderness rail opens: new grounds lie beyond the village."},
+ {"tab": "Sect", "stat": "realm", "value": 3, "line": "The sect rail opens: your name carries weight now."},
+ {"tab": "Alchemy", "stat": "herbs", "value": 1, "line": "The alchemy rail opens: herbs in hand, the cauldron calls."},
+ {"tab": "Soul", "stat": "marked", "value": 1, "line": "The soul rail opens: a recorded beast means a wakened spirit."},
+ {"tab": "Samsara", "stat": "rebirths", "value": 1, "line": "The samsara rail opens: death kept what mattered."},
+ {"tab": "Deeds", "stat": "deeds", "value": 1, "line": "The deeds rail opens: heaven notes the crossing."}
+]

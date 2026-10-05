@@ -1,0 +1,7 @@
+[
+ {"id": "tech_stillwater", "name": "Stillwater Breathing", "desc": "Calm breath cycle. Steady tribulation focus.", "curve": [1.0, 0.1], "wear": 1.0, "perk": "untiring"},
+ {"id": "tech_emberstep", "name": "Ember Step", "desc": "Quick footwork drilled near warm vents.", "curve": [1.0, 0.16], "wear": 2.0, "perk": "none"},
+ {"id": "tech_rootgrip", "name": "Rootgrip Stance", "desc": "Low rooted stance. Endure and outlast.", "curve": [1.0, 0.07], "wear": 1.0, "perk": "bulwark"},
+ {"id": "tech_mistwalk", "name": "Mistwalking Gait", "desc": "Steps that arrive before their sound.", "curve": [1.0, 0.1], "wear": 1.0, "perk": "lightfoot"},
+ {"id": "tech_stonebell", "name": "Stonebell Rings", "desc": "Hummed tones that settle the chest.", "curve": [1.0, 0.1], "wear": 1.0, "perk": "settling"}
+]
