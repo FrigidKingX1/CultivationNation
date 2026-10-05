@@ -125,3 +125,16 @@ baseline after a seed change. Same post-leak discipline as everything else.
   generated table the engine uses — defaulting to 1 when content is
   unreachable. Already compliant (no independent re-derivation); keep the
   pattern for zones3d.json consumers. LOCKED.
+
+---
+
+## Amendment 2 — C7 correction + verification rule (post 0.22.0)
+- The `_zone_of_node` "-> void" reading was a wrapped-display artifact of a
+  chat paste. Raw file bytes are authoritative; the standing rule is recorded
+  in docs/adr/STANDING_RULES.md (R-S9): contract/signature audits cite raw
+  bytes, chat pastes are lossy.
+- C7 restated, signature-agnostic: _zone_of_node() derives zone PURELY from
+  engine current-node state + generated tables — no side channels, no
+  caching across apply_state. The 0.22.0 rework satisfied this as evidenced
+  by the contract-drift suite and zone API tests. Query/updater wording is
+  retired; the purity requirement was and remains the contract.
