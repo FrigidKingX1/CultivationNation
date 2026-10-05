@@ -58,3 +58,67 @@ baseline after a seed change. Same post-leak discipline as everything else.
                                     checkpoint (sign-off before internals)
 - C3/C6                           : p23_world_test spawn/despawn + rebuild
 - C5                              : p14 suite after the rule-11 commit
+
+---
+
+## Amendment 1 — Semantic extensions + churn protocol (post contract review, ba28606)
+
+### C7 — Zone API trio  [has_zone_palette / current_zone / apply_zone / _zone_of_node]
+- has_zone_palette(zone: String) -> bool: PURE query over the palette
+  table (zones3d.json post-rework). Unknown zone -> false. No mutation.
+- current_zone() -> String: query of stored zone. Deterministic initial
+  value before first poll; MUST NOT error while held at title (world
+  exists behind the title overlay — same as today).
+- apply_zone(zone: String) -> void: the zone-switch entry point. IDEMPOTENT
+  (re-applying the current zone is a no-op or a cheap refresh). Drives
+  island dressing + beast-marker rebuild for that zone.
+- _zone_of_node() -> void: UPDATER, not query (contract shows -> void).
+  Derives zone purely from engine current-node state via _engine() plus
+  static/generated zone tables. No side channels, no caching across
+  apply_state. Verified against the committed contract, not prose.
+
+### C8 — Tribulation API  [play_tribulation / tribulation_active]
+- play_tribulation(quality: String, waves: int): presentation entry only;
+  cadence and outcome resolution stay engine-side (untouched). quality
+  strings expected Radiant / Steady / Shaky — VERIFIED from GameEngine
+  (forecast_quality returns exactly these three; other last_quality states
+  are Failed/Unready/Warded/Defeated and never reach presentation).
+- tribulation_active() -> bool: true from play until presentation
+  completion. Main/tests may poll it; keep the meaning exact.
+
+### C9 — Budget introspection  [count_nodes / particle_budget]
+- count_nodes() -> int: recursive world-subtree node count (MultiMesh
+  counts as ONE node per ADR v2). This is the C6 rebuild-assertion
+  primitive (baseline before/after seed change).
+- particle_budget() -> Dictionary: the p14 budget surface. Key set is
+  exactly {total, max_per_effect, effects} (verified in WorldView.gd);
+  the rework must preserve the key set exactly.
+
+### Churn protocol — internals may change; the contract tracks it
+- The exact-diff test enforces "contract file == re-extraction at every
+  commit boundary." Therefore: whenever a WorldView change alters the
+  extraction, run the probe and commit the updated contract IN THE SAME
+  COMMIT as the change. The contract diff becomes the facade changelog.
+- SEMANTIC FACADE (the 9 public methods + _poll_engine + the C1–C9
+  surfaces) is preserved member-for-member through 0.22.0.
+- OLD-DIORAMA INTERNALS (_sprite_node, _unshaded, _flat_mat, _place,
+  _build_diorama, _build_cultivator sprite paths, and kin) are expected
+  to be REMOVED/REPLACED. That is one batch contract-update commit with a
+  summary justification — not one rule-11 edit per helper. Rule-11
+  formality is reserved for semantic-facade changes.
+- C6 margin: rebuild test sketch — snapshot count_nodes(), apply_state
+  with an altered map_seed (ascension path), assert count returns to
+  baseline after rebuild completes.
+
+### Margins — FILLED in P23a (record-then-lock)
+- Season ordinal -> name: GameEngine SEASON_NAMES = [Spring, Summer,
+  Autumn, Winter]; season_index() = clampi(_month_accum / 3, 0, 3), so
+  0=Spring, 1=Summer, 2=Autumn, 3=Winter. SEASON_WEATHER is indexed
+  identically. LOCKED.
+- Tribulation quality literals: Radiant / Steady / Shaky (presentation
+  set, from forecast_quality). LOCKED.
+- particle_budget() key set: {total, max_per_effect, effects}. LOCKED.
+- _tier_of_realm source: reads ContentDB realms macro_tier — the SAME
+  generated table the engine uses — defaulting to 1 when content is
+  unreachable. Already compliant (no independent re-derivation); keep the
+  pattern for zones3d.json consumers. LOCKED.
