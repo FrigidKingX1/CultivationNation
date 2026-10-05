@@ -1,0 +1,19 @@
+[remap]
+
+importer="csv_translation"
+type="Translation"
+uid="uid://pxaa188ochdc"
+
+[deps]
+
+files=["res://docs/qa/p22/sweep_summary.Exit.translation", "res://docs/qa/p22/sweep_summary.PassLines.translation"]
+
+source_file="res://docs/qa/p22/sweep_summary.csv"
+dest_files=["res://docs/qa/p22/sweep_summary.Exit.translation", "res://docs/qa/p22/sweep_summary.PassLines.translation"]
+
+[params]
+
+compress=1
+delimiter=0
+unescape_keys=false
+unescape_translations=true

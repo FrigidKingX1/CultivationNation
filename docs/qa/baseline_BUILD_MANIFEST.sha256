@@ -1,0 +1,5 @@
+# Baseline build manifest for tag v0.20.1-baseline (product 0.20.1, save v11).
+# Relative to build/win. Regenerable from the baseline tag via tools\\run.ps1 export-win.
+eb9e9b511e11696ea578f079edab3ddbabce1cf08884959a1c1fc7de1a5e8bd9  big_number.windows.template_release.x86_64.single.dll
+a798e162a1be4f9d87b5ee0719260f02ec9942969071df84307dffb217f2fdc1  CultivationNation.exe
+b8d43cd1aa2af677d6c6924abc9b91c9cfbf2d2a702cdc0b23690c71e7e11943  CultivationNation.pck
