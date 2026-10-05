@@ -335,6 +335,15 @@ func _test_filter() -> void:
 	ui.call("set_filter", "all")
 	t = str((_scene_main.get_node("UI/Root/ChroniclePanel/ChronicleBox/LogText2") as RichTextLabel).get_parsed_text())
 	_check("filter-probe-info" in t, "all filter restores")
+	# P22: the ring cap alone does not bound the visible document — every
+	# append_text() permanently retains RichTextLabel item objects (+496 per
+	# 500 appends measured), so long sessions grew objects without bound.
+	# log_line must rebuild from the ring past 2x the cap.
+	var before: int = int(Performance.get_monitor(Performance.OBJECT_COUNT))
+	for i in 600:
+		ui.call("log_line", "bound-probe", "info")
+	var grew: int = int(Performance.get_monitor(Performance.OBJECT_COUNT)) - before
+	_check(grew < 450, "chronicle document stays bounded (grew=" + str(grew) + ")")
 
 func _anim_setup() -> void:
 	# Arms the bar tween before the wall wait so it settles inside it.

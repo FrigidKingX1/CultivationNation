@@ -17,6 +17,7 @@ var ach_names: Dictionary = {}
 # keep updating untouched (hidden old tree still feeds every text assert).
 var _log_ring: Array = []
 var _log_filter: String = "all"
+var _log_lines: int = 0
 var _qi_bar_target: float = 0.0
 var _qi_tween: Tween = null
 # P17-Step4: pooled floating numbers (pre-allocated, capped, recycled via
@@ -195,6 +196,11 @@ func _refresh_topbar(ge: Node, st: Dictionary) -> void:
 func log_line(s: String, cat: String = "info") -> void:
 	# P17-Step4 fix: single append. (_log now IS the chronicle label, so the
 	# old dual-write printed every line twice — caught on screenshot.)
+	# P22: the ring cap alone does NOT bound the visible document — every
+	# append_text() permanently retains RichTextLabel item objects, so an
+	# uncapped label leaks ~1 Object per log line over long sessions
+	# (proven: +496 retained per 500 appends). Rebuild from the ring once
+	# the visible line count passes 2x the ring cap.
 	_log_ring.append([cat, s])
 	while _log_ring.size() > 200:
 		_log_ring.pop_front()
@@ -202,19 +208,26 @@ func log_line(s: String, cat: String = "info") -> void:
 		return
 	if _log_filter == "all" or cat == _log_filter:
 		_log.append_text(s + "\n")
+		_log_lines += 1
+	if _log_lines > 400:
+		_rebuild_log_text()
+
+func _rebuild_log_text() -> void:
+	if _log == null:
+		return
+	_log.text = ""
+	_log_lines = 0
+	for pair in _log_ring:
+		if _log_filter == "all" or str(pair[0]) == _log_filter:
+			_log.append_text(str(pair[1]) + "\n")
+			_log_lines += 1
 
 func set_filter(f: String) -> void:
 	## Rebuilds the visible chronicle from the ring (filtering is a view).
 	if not ["all", "info", "warn"].has(f):
 		return
 	_log_filter = f
-	var t: RichTextLabel = get_node_or_null("Root/ChroniclePanel/ChronicleBox/LogText2") as RichTextLabel
-	if t == null:
-		return
-	t.text = ""
-	for pair in _log_ring:
-		if f == "all" or str(pair[0]) == f:
-			t.append_text(str(pair[1]) + "\n")
+	_rebuild_log_text()
 
 func toast(msg: String, cat: String = "info") -> void:
 	var box: Node = get_node_or_null("Root/ToastArea")
