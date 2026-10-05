@@ -48,6 +48,8 @@ func _grid_mesh(r: float, seed: int, amp: float) -> ArrayMesh:
 func _multimesh_instances(mesh: Mesh, mat: Material, spots: Array) -> MultiMeshInstance3D:
 func _prop_spots(seed: int, r: float, count: int, salt: int) -> Array:
 func _island_node(zone: String) -> Node3D:
+func _build_shrine(root: Node3D, zone: String, r: float, amp: float) -> void:
+func _pal_color(pal: Dictionary, key: String, fallback: Color) -> Color:
 func _dress_island(zone: String) -> void:
 func _poll_seed() -> void:
 func _focus_on_island(zone: String) -> void:

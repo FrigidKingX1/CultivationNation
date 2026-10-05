@@ -1,12 +1,8 @@
-[gd_scene load_steps=6 format=3]
+[gd_scene load_steps=5 format=3]
 
 [ext_resource type="Script" path="res://scripts/UIManager.gd" id="1"]
 [ext_resource type="Script" path="res://scripts/Main.gd" id="2"]
 [ext_resource type="Script" path="res://scripts/WorldView.gd" id="3"]
-[ext_resource type="Shader" path="res://assets/shaders/ink_wash.gdshader" id="4"]
-
-[sub_resource type="ShaderMaterial" id="ShaderMaterial_1"]
-shader = ExtResource("4")
 
 [node name="Main" type="Node"]
 script = ExtResource("2")
@@ -23,7 +19,6 @@ script = ExtResource("3")
 anchors_preset = 15
 anchor_right = 1.0
 anchor_bottom = 1.0
-material = SubResource("ShaderMaterial_1")
 expand_mode = 1
 stretch_mode = 6
 mouse_filter = 2

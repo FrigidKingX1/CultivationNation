@@ -95,7 +95,10 @@ func _test_world_shell() -> void:
 	var w: Node = _world()
 	_check(w != null, "world node exists")
 	_check(_scene_main.get_node_or_null("WorldDisplay") != null, "world display docked")
-	_check((_scene_main.get_node("WorldDisplay") as TextureRect).material != null, "ink material assigned")
+	# P23 rule-11 (Q25 ratified): the ink grade is retired — pure low-poly.
+	# WorldDisplay carries no post-process material now; modal blur (title/
+	# help overlays) and button shine are untouched. See P23_WORLD_ADR.md.
+	_check((_scene_main.get_node("WorldDisplay") as TextureRect).material == null, "ink grade retired")
 	_check((_scene_main.get_node("WorldDisplay") as TextureRect).texture != null, "world texture bound")
 	# P17-Step3: tabbed panels replace the old scrolling action column.
 	_check(_scene_main.get_node_or_null("UI/Root/SidePanel/PanelScroll/PanelTabs") != null, "tab container docked")

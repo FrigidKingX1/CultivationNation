@@ -1,4 +1,4 @@
-# PHASE 23 — Macro-Tier Guardians (0.21.0, save v12)
+# PHASE M2–M5 — Macro-Tier Guardians (0.21.0, save v12)
 
 Implements the locked M1 ADR-001: seven macro-tier wardens as a new,
 separate, additive system. Deterministic duels, no RNG. Victories persist

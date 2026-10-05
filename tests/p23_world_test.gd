@@ -131,9 +131,20 @@ func _test_islands() -> void:
 		if not expect.has(str(z)):
 			same = false
 	_check(same, "island zone set equals beasts zones")
-	_check(w.get_node_or_null("Islands/Island_Dewfield/Ground") != null, "dewfield ground meshed")
-	_check(w.get_node_or_null("Islands/Island_Dewfield/GateWall") != null, "gate wall staged")
 	_check(w.get_node_or_null("CamRig/Yaw/Pitch/Camera3D") != null, "orbit rig staged")
+	# Warden shrines: gold flame on tier-threshold islands, plinth only
+	# elsewhere; the tier-7 sentinel shares Thornwake at the ladder's end.
+	# (Only the active island plus neighbors are resident, so each check
+	# visits its island first.)
+	w.call("apply_zone", "Murkfen")
+	_check(w.get_node_or_null("Islands/Island_Murkfen/Ground") != null, "murkfen ground meshed")
+	_check(w.get_node_or_null("Islands/Island_Murkfen/GateWall") != null, "gate wall staged")
+	_check(w.get_node_or_null("Islands/Island_Murkfen/ShrineFlame") != null, "warden flame lit")
+	w.call("apply_zone", "Thornwake")
+	_check(w.get_node_or_null("Islands/Island_Thornwake/SentinelFlame") != null, "sentinel watches the ladder's end")
+	w.call("apply_zone", "Dewfield")
+	_check(w.get_node_or_null("Islands/Island_Dewfield/Shrine") != null, "plinth on quiet isles")
+	_check(w.get_node_or_null("Islands/Island_Dewfield/ShrineFlame") == null, "no flame where no warden stands")
 
 func _test_gates() -> void:
 	var w: Node = _world()

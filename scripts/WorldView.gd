@@ -604,7 +604,9 @@ func _island_node(zone: String) -> Node3D:
 	var ground := MeshInstance3D.new()
 	ground.name = "Ground"
 	ground.mesh = _grid_mesh(r, seed, amp * 0.5)
-	ground.material_override = _flat_mat(mid)
+	var gmat := _flat_mat(mid)
+	gmat.cull_mode = BaseMaterial3D.CULL_DISABLED
+	ground.material_override = gmat
 	root.add_child(ground)
 	var under := MeshInstance3D.new()
 	under.name = "Under"
@@ -656,21 +658,86 @@ func _island_node(zone: String) -> Node3D:
 	var herbs := _multimesh_instances(herb_mesh, _flat_mat(Color(0.35, 0.6, 0.3)), _prop_spots(seed, r, int(props.get("herb_nodes", 3)) * 2, 3))
 	herbs.name = "Herbs"
 	root.add_child(herbs)
+	_build_shrine(root, zone, r, amp)
 	return root
 
+# Warden shrines stand on the highest-min_realm island of each tier span
+# (T1 Murkfen, T2 Stonehollow, T3 Stillmere, T4 Pyrefen, T5 Whitefoundry,
+# T6 Thornwake); the tier-7 sentinel shares Thornwake at the ladder's end.
+# Presentation only (R13) — duels resolve via the engine/UI path.
+const WARDEN_ISLES := ["Murkfen", "Stonehollow", "Stillmere", "Pyrefen", "Whitefoundry", "Thornwake"]
+
+func _build_shrine(root: Node3D, zone: String, r: float, amp: float) -> void:
+	var top: float = amp * 0.5
+	var plinth := MeshInstance3D.new()
+	plinth.name = "Shrine"
+	var pb := BoxMesh.new()
+	pb.size = Vector3(2.4, 0.6, 2.4)
+	plinth.mesh = pb
+	plinth.material_override = _flat_mat(Color(0.55, 0.52, 0.45))
+	plinth.position = Vector3(r * 0.4, top + 0.3, -r * 0.3)
+	root.add_child(plinth)
+	var obelisk := MeshInstance3D.new()
+	obelisk.name = "ShrineStone"
+	var ob := BoxMesh.new()
+	ob.size = Vector3(0.5, 3.0, 0.5)
+	obelisk.mesh = ob
+	obelisk.material_override = _flat_mat(Color(0.35, 0.33, 0.38))
+	obelisk.position = Vector3(r * 0.4, top + 2.1, -r * 0.3)
+	root.add_child(obelisk)
+	if zone in WARDEN_ISLES:
+		var flame := MeshInstance3D.new()
+		flame.name = "ShrineFlame"
+		var fm := SphereMesh.new()
+		fm.radius = 0.35
+		fm.height = 0.7
+		flame.mesh = fm
+		flame.material_override = _unshaded(Color(1.0, 0.8, 0.35), 2.5)
+		flame.position = Vector3(r * 0.4, top + 4.0, -r * 0.3)
+		root.add_child(flame)
+	if zone == "Thornwake":
+		var sent := MeshInstance3D.new()
+		sent.name = "Sentinel"
+		var sb := BoxMesh.new()
+		sb.size = Vector3(0.7, 4.6, 0.7)
+		sent.mesh = sb
+		sent.material_override = _flat_mat(Color(0.75, 0.73, 0.80))
+		sent.position = Vector3(r * 0.4 + 2.2, top + 2.6, -r * 0.3)
+		root.add_child(sent)
+		var sflame := MeshInstance3D.new()
+		sflame.name = "SentinelFlame"
+		var sm := SphereMesh.new()
+		sm.radius = 0.45
+		sm.height = 0.9
+		sflame.mesh = sm
+		sflame.material_override = _unshaded(Color(1.0, 1.0, 0.95), 3.0)
+		sflame.position = Vector3(r * 0.4 + 2.2, top + 5.4, -r * 0.3)
+		root.add_child(sflame)
+
+func _pal_color(pal: Dictionary, key: String, fallback: Color) -> Color:
+	if pal.has(key) and (pal[key] as Array).size() == 3:
+		return Color(float(pal[key][0]), float(pal[key][1]), float(pal[key][2]))
+	return fallback
+
 func _dress_island(zone: String) -> void:
-	## Gray-box dressing: tint resident ground to the zone palette mid.
-	## Full dressing lands in P23b; the entry point and idempotence live here.
+	## Full zone dressing (P23b): ground tint plus sun/fog/backdrop grading
+	## from the zones3d palette. Tier grades still override sun/fog on tier
+	## change (same ordering as the diorama era).
 	var entry: Dictionary = _zone_entry(zone)
 	var pal: Dictionary = entry.get("palette", {})
-	if not pal.has("mid") or (pal["mid"] as Array).size() != 3:
-		return
-	var mid := Color(float(pal["mid"][0]), float(pal["mid"][1]), float(pal["mid"][2]))
+	var mid: Color = _pal_color(pal, "mid", Color(0.16, 0.24, 0.23))
 	var n: Node = _islands.get(zone) as Node
 	if n != null:
 		var g: MeshInstance3D = n.get_node_or_null("Ground") as MeshInstance3D
 		if g != null and g.material_override != null:
 			(g.material_override as StandardMaterial3D).albedo_color = mid
+	if _sun != null and pal.has("accent"):
+		_sun.light_color = _pal_color(pal, "accent", Color.WHITE)
+	if _env != null:
+		if pal.has("fog"):
+			_env.fog_light_color = _pal_color(pal, "fog", _env.fog_light_color)
+		if pal.has("sky_tint"):
+			_env.background_color = _pal_color(pal, "sky_tint", _env.background_color)
 
 func _poll_seed() -> void:
 	## C6: a changed map_seed (ascension path) rebuilds islands and frees
