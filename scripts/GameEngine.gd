@@ -58,6 +58,12 @@ var dantian_purity: float = DANTIAN_DEFAULT
 var techniques: Dictionary = {}
 # P3c — bestiary: id -> kills. Original system.
 var beasts: Dictionary = {}
+# P22 — guardians: duel entities, deliberately disjoint from the beast codex.
+# defeated holds guardian ids (persist rebirth AND ascend: the sword dao is
+# remembered); attempts maps id -> duel count (records/statistics).
+# _guardian_defs injected by caller from data/guardians.json (generated).
+var guardians: Dictionary = {"defeated": [], "attempts": {}}
+var _guardian_defs: Array = []
 # P3d — pause-before-death. Route planner CUT in P13-B5 (no setter, no UI,
 # never fed: dead state with a save key). Stored "route" keys in old saves
 # sit inert; the v2 migration that fills them stays untouched by rule.
@@ -426,6 +432,14 @@ func attempt_breakthrough(power: float, required: float, power_mult: float = 1.0
 		last_quality = "Unready"
 		last_tribulation = []
 		return false
+	# P22: macro-tier wardens. The breakthrough leaving a tier (including the
+	# final ladder-clearing crossing) requires that tier's guardian defeated.
+	# Interior breakthroughs pass through untouched.
+	var gate: Dictionary = guardian_gate()
+	if bool(gate.get("blocked", false)):
+		last_quality = "Warded"
+		last_tribulation = []
+		return false
 	## Winter tribulations strike 10% harder through the cultivator: the season
 	## favors the defender. Engine-side, so all callers share it.
 	# P12-4: pill charges ride this attempt, then burn out win or lose.
@@ -499,9 +513,127 @@ func attempt_breakthrough(power: float, required: float, power_mult: float = 1.0
 	_poll_achievements()
 	return true
 
+# --- P22: macro-tier guardians (ADR-001). Deterministic duels, no RNG. ---
+func set_guardian_defs(defs: Array) -> void:
+	## Guardian roster injected by caller (Main/tests) from
+	## data/guardians.json. Engine stays data-free.
+	_guardian_defs = defs.duplicate()
+
+func guardian_ids_in_order() -> Array:
+	var ids: Array = []
+	for g in _guardian_defs:
+		ids.append(str((g as Dictionary).get("id", "")))
+	return ids
+
+func guardian_roster() -> Array:
+	## UI-ready roster: id, name, tier, guard_realm, defeated, attempts,
+	## and whether this guardian currently bars the crossing.
+	var out: Array = []
+	var gate: Dictionary = guardian_gate()
+	var active_id: String = str(gate.get("id", ""))
+	var att: Dictionary = guardians.get("attempts", {})
+	for g in _guardian_defs:
+		var gid: String = str((g as Dictionary).get("id", ""))
+		out.append({
+			"id": gid, "name": str((g as Dictionary).get("name", gid)),
+			"tier": int((g as Dictionary).get("tier", 0)),
+			"guard_realm": int((g as Dictionary).get("guard_realm", 0)),
+			"defeated": guardian_defeated(gid),
+			"attempts": int(att.get(gid, 0)),
+			"active": gid != "" and gid == active_id,
+		})
+	return out
+
+func _guardian_def(id: String) -> Dictionary:
+	for g in _guardian_defs:
+		if str((g as Dictionary).get("id", "")) == id:
+			return g
+	return {}
+
+func guardian_defeated(id: String) -> bool:
+	return str(id) != "" and (guardians.get("defeated", []) as Array).has(id)
+
+func guardian_gate() -> Dictionary:
+	## Returns {"blocked": true, "id":, "name":, "tier":} when the current
+	## realm is the last of its macro tier and that tier's guardian stands
+	## undefeated. Empty Dictionary otherwise (interior realms, defeated
+	## guardians, unwired tables, completed ladders).
+	if _realm_table.is_empty() or _guardian_defs.is_empty():
+		return {}
+	if realm_index < 0 or realm_index >= realm_count:
+		return {}
+	var cur: Dictionary = _realm_table[clampi(realm_index, 0, _realm_table.size() - 1)]
+	var t: int = int(cur.get("macro_tier", 0))
+	if t <= 0:
+		return {}
+	var tier_end: int = -1
+	for i in range(_realm_table.size()):
+		if int((_realm_table[i] as Dictionary).get("macro_tier", 0)) == t:
+			tier_end = i
+	if tier_end < 0 or realm_index != tier_end:
+		return {}
+	for g in _guardian_defs:
+		if int((g as Dictionary).get("tier", 0)) == t:
+			var gid: String = str((g as Dictionary).get("id", ""))
+			if gid == "" or guardian_defeated(gid):
+				return {}
+			return {"blocked": true, "id": gid, "name": str((g as Dictionary).get("name", gid)), "tier": t}
+	return {}
+
+func attempt_guardian(power: float, power_mult: float = 1.0) -> Dictionary:
+	## Deterministic N-wave duel reusing the tribulation resolution family.
+	## Defense is the same combined number as is_ready (power + artifact,
+	## prep, season); guardian strikes escalate per wave. Guardian power is
+	## the boundary tribulation power, so a cultivator ready to cross the
+	## tier blocks every strike and wins Radiant by construction: the duel
+	## is ceremony, stakes, and story — not a new wall.
+	## Win (Radiant/Steady/Shaky): guardian falls, first-win reward pays.
+	## Defeat: proportional Qi cost only — no death, no stage loss.
+	var gate: Dictionary = guardian_gate()
+	if gate.is_empty():
+		return {"win": false, "reason": "no_guardian", "quality": "", "waves": [], "leak": 0.0, "reward": 0.0}
+	var gid: String = str(gate.get("id", ""))
+	var def: Dictionary = _guardian_def(gid)
+	var G: float = maxf(float(def.get("power", 0.0)), 0.001)
+	var n: int = maxi(int(def.get("waves", 4)), 1)
+	var D: float = (power + artifact_power_bonus()) * _prep_power * power_mult * season_power_bonus()
+	var leak: float = 0.0
+	var waves_out: Array = []
+	for j in range(n):
+		var s: float = G * (0.5 + 0.5 * float(j) / maxf(float(n - 1), 1.0))
+		var blocked: float = minf(s, D)
+		leak += s - blocked
+		waves_out.append({"strike": s, "blocked": blocked})
+	var core: float = G * 1.5
+	var quality: String = "Radiant" if leak <= 0.0 else ("Steady" if leak / maxf(core, 0.001) < 0.3 else ("Shaky" if leak <= core else "Defeat"))
+	var att: Dictionary = guardians.get("attempts", {})
+	att[gid] = int(att.get(gid, 0)) + 1
+	guardians["attempts"] = att
+	if quality == "Defeat":
+		var r: float = clampf(D / maxf(G, 0.001), 0.0, 1.0)
+		qi = BN.of(qi).times_float(0.5 + 0.5 * r)
+		last_quality = "Defeated"
+		last_tribulation = waves_out
+		return {"win": false, "reason": "", "quality": quality, "waves": waves_out, "leak": leak, "reward": 0.0}
+	(guardians.get("defeated", []) as Array).append(gid)
+	var req: float = BN.of(qi_bottleneck).to_float()
+	if not _realm_table.is_empty():
+		req = float((_realm_table[clampi(int(def.get("guard_realm", realm_index)), 0, _realm_table.size() - 1)] as Dictionary).get("qi_required", req))
+	var reward: float = req * float(def.get("reward_mult", 0.25))
+	qi = BN.of(qi).plus(BN.from_float(reward))
+	qi_earned_this_life = BN.of(qi_earned_this_life).plus(BN.from_float(reward))
+	qi_earned_total = BN.of(qi_earned_total).plus(BN.from_float(reward))
+	if focus_technique != "":
+		train_technique(focus_technique, 100)
+	last_quality = quality
+	last_tribulation = waves_out
+	_poll_achievements()
+	return {"win": true, "reason": "", "quality": quality, "waves": waves_out, "leak": leak, "reward": reward}
+
 func rebirth() -> void:
 	# P12-5: the completed life settles into karma BEFORE anything resets;
 	# the soul weapon, talents, and legacy cross over intact by design.
+	# P22: guardian victories cross over too (sword dao remembered).
 	karma += karma_yield()
 	qi_earned_this_life = BN.from_float(0.0)
 	total_rebirths += 1
@@ -1085,7 +1217,7 @@ func calculate_prestige_gain() -> int:
 func ascend() -> int:
 	## Leave this world: bank Dao Marks, reset realm/rate/aptitude/gear/
 	## sect/arts/attunement/herbs. Soul, talents, karma, achievements,
-	## records, and the marks ledger cross over. Returns marks gained.
+	## records, guardians, and the marks ledger cross over. Returns marks gained.
 	var gain: int = calculate_prestige_gain()
 	if gain <= 0:
 		return 0
@@ -1596,6 +1728,7 @@ func get_state() -> Dictionary:
 		"coach_done": coach_done,
 		"attunement": attunement.duplicate(), "victorious": victorious,
 		"offline_mortality": offline_mortality,
+		"guardians": {"defeated": (guardians.get("defeated", []) as Array).duplicate(), "attempts": (guardians.get("attempts", {}) as Dictionary).duplicate()},
 	}
 
 func apply_state(d: Dictionary) -> void:
@@ -1662,6 +1795,24 @@ func apply_state(d: Dictionary) -> void:
 	victorious = bool(d.get("victorious", false))
 	var om: String = str(d.get("offline_mortality", "vigil"))
 	offline_mortality = om if ["vigil", "unfettered"].has(om) else "vigil"
+	# P22: guardians persist rebirth AND ascend (sword dao remembered).
+	# Validate shapes: defeated must be an id array, attempts an id->int map.
+	guardians = {"defeated": [], "attempts": {}}
+	var gs: Variant = d.get("guardians", {})
+	if gs is Dictionary:
+		var raw_defeated: Variant = (gs as Dictionary).get("defeated", [])
+		if raw_defeated is Array:
+			var defeats: Array = []
+			for gid in (raw_defeated as Array):
+				if str(gid) != "" and not defeats.has(str(gid)):
+					defeats.append(str(gid))
+			guardians["defeated"] = defeats
+		var raw_tries: Variant = (gs as Dictionary).get("attempts", {})
+		if raw_tries is Dictionary:
+			var tries: Dictionary = {}
+			for k in (raw_tries as Dictionary):
+				tries[str(k)] = maxi(int((raw_tries as Dictionary).get(k, 0)), 0)
+			guardians["attempts"] = tries
 	_mind_stage = mind_stage()
 	_mind_wear = 0
 	_mind_ease = 0

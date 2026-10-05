@@ -25,6 +25,9 @@ var _save_timer: float = 0.0
 var _auto_breakthrough_power: float = 10.0
 # P13-B1: one unready note per fill (reset while Qi is short of the bottleneck).
 var _unready_note_done: bool = false
+# P22: one lost-duel note per fill for the same reason (duels repeat until
+# the pool drops below the bottleneck; wins always report, max seven ever).
+var _warden_note_done: bool = false
 # P15-Step3: victory celebration fires once per Main session, on the attempt
 # that clears the ladder (post-clear attempts are cap-refused, so no encore).
 var _victory_logged: bool = false
@@ -656,6 +659,12 @@ func _on_manual_breakthrough() -> void:
 	var ge: Node = get_node("/root/GameEngine")
 	var need: float = _trib_need(ge)
 	var bonus: float = float(ge.call("best_technique_bonus"))
+	# P22: wardens bar tier crossings until defeated — name the way out.
+	var gate0: Dictionary = ge.call("guardian_gate")
+	if bool(gate0.get("blocked", false)):
+		_log("The %s bars this crossing — defeat it first (Beasts tab)." % str(gate0.get("name", "warden")), "warn")
+		_sfx("fail")
+		return
 	# P13-B1: doomed attempts are refused cost-free, with the way out named.
 	if not bool(ge.call("is_ready", _auto_breakthrough_power, need, bonus)):
 		_log("Too weak for the tribulation (readiness %d%%) — drill a technique first." % int(ge.call("readiness_pct", _auto_breakthrough_power, need, bonus)), "warn")
@@ -1290,6 +1299,71 @@ func _rebuild_bestiary() -> void:
 		lab.tooltip_text = "Signs found stalking the %s grounds. %d for marked, %d for apex." % [str((b as Dictionary).get("zone", "?")), 5000, 20000]
 		box.add_child(lab)
 
+func _rebuild_guardians() -> void:
+	## P22: 7 warden rows, rebuilt when opened. Duel entities are disjoint
+	## from the beast codex — this roster never touches beast kill counts.
+	var ge: Node = get_node_or_null("/root/GameEngine")
+	var label: Label = get_node_or_null("UI/Root/SidePanel/PanelScroll/PanelTabs/Beasts/GuardianLabel") as Label
+	var box: Node = get_node_or_null("UI/Root/SidePanel/PanelScroll/PanelTabs/Beasts/GuardianBox")
+	if ge == null or label == null or box == null:
+		return
+	for c in box.get_children():
+		box.remove_child(c)
+		c.queue_free()
+	var roster: Array = ge.call("guardian_roster")
+	if roster.is_empty():
+		label.text = "Wardens: none met."
+		return
+	var fallen: int = 0
+	for g in roster:
+		if bool((g as Dictionary).get("defeated", false)):
+			fallen += 1
+	label.text = "Wardens: %d of %d fallen." % [fallen, roster.size()]
+	label.tooltip_text = "Macro-tier wardens bar ladder crossings until defeated. Defeat stands through Samsara."
+	for g in roster:
+		var gd: Dictionary = g
+		var b := Button.new()
+		b.name = "Guardian_%s" % str(gd.get("id", "?"))
+		if bool(gd.get("defeated", false)):
+			b.text = "%s — fallen (tier %d)" % [str(gd.get("name", "?")), int(gd.get("tier", 0))]
+			b.disabled = true
+			b.tooltip_text = "This warden stays defeated. The sword dao is remembered."
+		elif bool(gd.get("active", false)):
+			b.text = "Challenge %s (tier %d)" % [str(gd.get("name", "?")), int(gd.get("tier", 0))]
+			b.tooltip_text = "A deterministic duel: power against power, no death, proportional cost on defeat."
+			b.pressed.connect(_on_guardian.bind(str(gd.get("id", ""))))
+		else:
+			b.text = "%s — sleeps (tier %d)" % [str(gd.get("name", "?")), int(gd.get("tier", 0))]
+			b.disabled = true
+			b.tooltip_text = "This warden bars a deeper crossing. Reach its tier first."
+		box.add_child(b)
+
+func _on_guardian(id: String) -> void:
+	## Manual warden duel from the Beasts tab. Same power basis as the
+	## manual breakthrough (auto power + best technique bonus).
+	var ge: Node = get_node("/root/GameEngine")
+	var bonus: float = float(ge.call("best_technique_bonus"))
+	var wname: String = id
+	for g in (ge.call("guardian_roster") as Array):
+		if str((g as Dictionary).get("id", "")) == id:
+			wname = str((g as Dictionary).get("name", id))
+	var res: Dictionary = ge.call("attempt_guardian", _auto_breakthrough_power, bonus)
+	if bool(res.get("win", false)):
+		_log("Warden fallen: %s (%s)." % [wname, str(res.get("quality", "?"))])
+		_toast("Warden fallen: %s" % wname, "realm")
+		_sfx("breakthrough")
+		var ui_fx: Node = get_node_or_null("UI")
+		if ui_fx != null and ui_fx.has_method("play_breakthrough_fx"):
+			ui_fx.call("play_breakthrough_fx")
+	elif str(res.get("reason", "")) == "no_guardian":
+		_log("No warden bars the way right now.", "warn")
+		_sfx("fail")
+	else:
+		_log("The warden prevails — proportional Qi lost. Train and return.", "warn")
+		_sfx("fail")
+	_rebuild_guardians()
+	_refresh_breakthrough_btn()
+
 func _rebuild_achievements() -> void:
 	## P17-Step3: 43 rows with unlocked state, rebuilt when opened.
 	var ge: Node = get_node_or_null("/root/GameEngine")
@@ -1421,6 +1495,7 @@ func _on_panels_toggle() -> void:
 			rail.visible = bool(p.visible)
 		if p.visible:
 			_rebuild_bestiary()
+			_rebuild_guardians()
 			_rebuild_achievements()
 			_refresh_attune_if_stale()
 			_highlight_rail()
@@ -1432,6 +1507,7 @@ func _on_panels_toggle() -> void:
 func _on_tab_changed(_tab: int) -> void:
 	## Fresh rows whenever the player looks (cheap lists rebuilt on open).
 	_rebuild_bestiary()
+	_rebuild_guardians()
 	_rebuild_achievements()
 	_highlight_rail()
 
@@ -1593,6 +1669,7 @@ func _refresh_all() -> void:
 	_refresh_talents()
 	_refresh_prestige()
 	_rebuild_bestiary()
+	_rebuild_guardians()
 	_rebuild_achievements()
 	_refresh_attune_if_stale()
 	_refresh_ui()
@@ -1605,6 +1682,7 @@ func _wire_world(ge: Node) -> void:
 	ge.call("set_beast_pool", cdb.get("beasts"))
 	ge.call("set_hunt_order", cdb.call("beast_ids_in_order"))
 	ge.call("set_technique_defs", cdb.get("techniques"))
+	ge.call("set_guardian_defs", cdb.get("guardians"))
 	if int(ge.get("map_seed")) < 0:
 		ge.call("generate_map", -1)
 	else:
@@ -1648,6 +1726,20 @@ func _process(delta: float) -> void:
 	if ge.call("qi_num") >= ge.call("bottleneck_num"):
 		var need: float = _trib_need(ge)
 		var bonus: float = float(ge.call("best_technique_bonus"))
+		# P22: idle hands still duel — a standing warden is challenged
+		# automatically when the crossing fills, then the attempt proceeds.
+		var gateA: Dictionary = ge.call("guardian_gate")
+		if bool(gateA.get("blocked", false)):
+			var resA: Dictionary = ge.call("attempt_guardian", _auto_breakthrough_power, bonus)
+			if bool(resA.get("win", false)):
+				_log("Warden fallen: %s (%s)." % [str(gateA.get("name", "warden")), str(resA.get("quality", "?"))])
+				_toast("Warden fallen: %s" % str(gateA.get("name", "warden")), "realm")
+				_sfx("breakthrough")
+				_rebuild_guardians()
+			elif not _warden_note_done:
+				_warden_note_done = true
+				_log("The %s prevails — proportional Qi lost. Train and return." % str(gateA.get("name", "warden")), "warn")
+				_sfx("fail")
 		if not bool(ge.call("is_ready", _auto_breakthrough_power, need, bonus)):
 			if not _unready_note_done:
 				_unready_note_done = true
@@ -1667,6 +1759,7 @@ func _process(delta: float) -> void:
 				_log("Tribulation failed (power %.0f < need %.0f). Half Qi lost." % [_auto_breakthrough_power, need], "warn")
 	else:
 		_unready_note_done = false
+		_warden_note_done = false
 	# UI poll at ~4Hz (matches high-speed throttle lesson from CoFD).
 	_ui_timer += delta
 	if _ui_timer >= 0.25:
@@ -1829,6 +1922,13 @@ func _refresh_breakthrough_btn() -> void:
 	var sym: String = "» " if pct >= 100 else ("! " if pct >= 70 else "× ")
 	_set_shine(b, pct >= 100)
 	b.text = "%sAttempt Tribulation (%d%% · %s)" % [sym, pct, str(fc.get("quality", "?"))]
+	# P22: a standing warden bars the crossing — name it on the button.
+	var gate: Dictionary = ge.call("guardian_gate")
+	if bool(gate.get("blocked", false)):
+		b.text += " · Warded"
+		b.tooltip_text = "The %s bars this crossing. Defeat it first (Beasts tab). [T]" % str(gate.get("name", "warden"))
+	else:
+		b.tooltip_text = "Attempt when Qi fills. Readiness and forecast shown live. [T]"
 
 func _log(s: String, cat: String = "info") -> void:
 	var ui: Node = get_node_or_null("UI")

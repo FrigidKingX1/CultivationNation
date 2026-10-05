@@ -184,7 +184,7 @@ func _test_migration() -> void:
 	wf.store_string(JSON.stringify({"save_version": 5, "engine": v5eng, "extra": {}}))
 	wf.close()
 	var loaded: Dictionary = sm.call("load_game")
-	_check(int(loaded.get("save_version", 0)) == 11, "v5 fixture stamped to v11")
+	_check(int(loaded.get("save_version", 0)) == 12, "v5 fixture stamped to v12")
 	_check((ge.get("hints_seen") as Array).is_empty(), "v5->v6 hints default empty")
 	_check((ge.get("nodes_visited") as Array).is_empty(), "v5->v6 visited default empty")
 	for p in [slot, bak]:

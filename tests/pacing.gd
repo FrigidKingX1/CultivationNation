@@ -26,6 +26,7 @@ func _initialize() -> void:
 	var cdb: Node = CDB.new()
 	cdb.call("load_all")
 	ge.call("set_beast_pool", cdb.get("beasts"))
+	ge.call("set_guardian_defs", cdb.get("guardians"))
 	cdb.free()
 	ge.call("generate_map", 4242)
 	print("PACING: policy=train-then-cultivate, 1x sim seconds, cap 10M ticks")
@@ -45,6 +46,9 @@ func _initialize() -> void:
 			ge.set("focus_technique", "pace_art")
 		elif ge.call("qi_num") < ge.call("bottleneck_num"):
 			ge.call("set_focus", "cultivate")
+		elif not (ge.call("guardian_gate") as Dictionary).is_empty():
+			# P22: a standing warden bars the crossing — duel first.
+			ge.call("attempt_guardian", 10.0, bonus)
 		else:
 			ge.call("attempt_breakthrough", 10.0, _need(r), bonus)
 		ge.call("_step_tick")

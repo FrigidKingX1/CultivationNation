@@ -1,0 +1,9 @@
+[
+ {"id": "guardian_01", "name": "Stone Gatewarden", "tier": 1, "guard_realm": 7, "power": 40.0, "waves": 4, "reward_mult": 0.25, "provisional": true},
+ {"id": "guardian_02", "name": "Verdant Gatewarden", "tier": 2, "guard_realm": 15, "power": 80.0, "waves": 5, "reward_mult": 0.25, "provisional": true},
+ {"id": "guardian_03", "name": "Deep Tide Gatewarden", "tier": 3, "guard_realm": 23, "power": 120.0, "waves": 6, "reward_mult": 0.25, "provisional": true},
+ {"id": "guardian_04", "name": "Ninefold Storm Gatewarden", "tier": 4, "guard_realm": 31, "power": 160.0, "waves": 7, "reward_mult": 0.25, "provisional": true},
+ {"id": "guardian_05", "name": "Hollow Void Gatewarden", "tier": 5, "guard_realm": 39, "power": 200.0, "waves": 8, "reward_mult": 0.25, "provisional": true},
+ {"id": "guardian_06", "name": "Falling Star Gatewarden", "tier": 6, "guard_realm": 47, "power": 240.0, "waves": 9, "reward_mult": 0.25, "provisional": true},
+ {"id": "guardian_07", "name": "Heavenmark Sentinel", "tier": 7, "guard_realm": 49, "power": 250.0, "waves": 10, "reward_mult": 0.25, "provisional": true}
+]

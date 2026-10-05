@@ -231,12 +231,22 @@ func _test_stalk_warning() -> void:
 	_check("Outmatched" in _log_text(), "stalk names the drill fix")
 
 func _test_victory_live() -> void:
-	# The full live path: drill to gate power, cross the last gate, celebrate.
+	# The full live path: warded refusal, duel through the roster UI, then
+	# cross the last gate and celebrate.
 	var ge: Node = root.get_node("GameEngine")
 	ge.set("realm_index", 49)
-	ge.set("techniques", {"tech_stillwater": 5760000})
+	ge.set("techniques", {"tech_stillwater": 6000000})
 	ge.set("qi", 1e32)
-	(_scene_main.get_node("UI/Root/BottomDock/DockRows/DockRow1/BreakthroughBtn") as BaseButton).emit_signal("pressed")
+	_scene_main.call("_rebuild_guardians")
+	var abtn: BaseButton = _scene_main.get_node("UI/Root/BottomDock/DockRows/DockRow1/BreakthroughBtn") as BaseButton
+	abtn.emit_signal("pressed")
+	_check(int(ge.get("realm_index")) == 49, "warded crossing refused live")
+	_check("bars this crossing" in _log_text(), "refusal names the warden")
+	var cbtn: BaseButton = _scene_main.get_node("UI/Root/SidePanel/PanelScroll/PanelTabs/Beasts/GuardianBox/Guardian_guardian_07") as BaseButton
+	_check(cbtn != null and not cbtn.disabled, "final warden offers its challenge")
+	cbtn.emit_signal("pressed")
+	_check(bool(ge.call("guardian_defeated", "guardian_07")), "live duel defeats the sentinel")
+	abtn.emit_signal("pressed")
 	_check(int(ge.get("realm_index")) == 50, "live crossing clears ladder")
 	_check(bool(ge.get("victorious")), "live victory recorded")
 	_check("fiftieth gate" in _log_text(), "celebration logged")

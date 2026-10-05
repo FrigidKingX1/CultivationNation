@@ -35,6 +35,8 @@ $P = "E:\ClaudeATHome\Projects\Cultivation Nation"
 & $E --headless --path $P -s "res://tests/p16_test.gd"              # reliability (13)
 & $E --headless --path $P -s "res://tests/p17_test.gd"              # interface (71)
 & $E --headless --path $P -s "res://tests/p21_test.gd"              # adopted systems (52)
+& $E --headless --path $P -s "res://tests/guardians_test.gd"         # wardens/duels (79)
+& $E --headless --path $P -s "res://tests/save_v12_migration_test.gd" # save v12 (9)
 & $E --headless --path $P -s "res://tests/soak_test.gd"             # 210y soak
 & $E --path "E:\Godot Game Engine\Godot_v4.6.3-stable_win64.exe\Godot_v4.6.3-stable_win64.exe" --path $P  # play
 ```
@@ -84,6 +86,11 @@ Hybrid number formatting to 1e51.
 - Pause-before-death, 43 achievements (realms to 50, systems, True Bestiary).
   Old 3-column UI replaced in P17 (route planner cut in P13: dead with no
   setter or UI).
+- Macro-tier wardens (P23): 7 generated guardians, one per tier, bar the
+  breakthrough leaving their tier (including the final ladder-clearing
+  crossing). Deterministic N-wave duels on the tribulation-power scale;
+  proportional defeat costs, first-win rewards, victories persist rebirth
+  and ascension. Roster + Challenge buttons live in the Beasts tab.
 - Procedural sound (synthesized chimes, zero assets, mute + volume slider)
 
 ## Interface (P17 overhaul, P19c modernization, P21 adoption)

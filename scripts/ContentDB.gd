@@ -10,6 +10,7 @@ var gear: Array = []
 var achievements: Array = []
 var prestige: Array = []
 var reveal: Array = []
+var guardians: Array = []
 var loaded: bool = false
 
 func _ready() -> void:
@@ -24,6 +25,7 @@ func load_all() -> bool:
 	achievements = _load_json_array("res://data/achievements.json")
 	prestige = _load_json_array("res://data/prestige.json")
 	reveal = _load_json_array("res://data/reveal.json")
+	guardians = _load_json_array("res://data/guardians.json")
 	loaded = true
 	return validate()
 
@@ -98,5 +100,12 @@ func validate() -> bool:
 	for r in reveal:
 		if not (r.has("tab") and r.has("stat") and r.has("value") and r.has("line")):
 			push_error("ContentDB: bad reveal entry")
+			return false
+	for g in guardians:
+		if not (g.has("id") and g.has("name") and g.has("tier") and g.has("guard_realm") and g.has("power") and g.has("waves") and g.has("reward_mult")):
+			push_error("ContentDB: bad guardian entry")
+			return false
+		if not str((g as Dictionary).get("id", "")).begins_with("guardian_"):
+			push_error("ContentDB: guardian id must use guardian_ prefix")
 			return false
 	return true

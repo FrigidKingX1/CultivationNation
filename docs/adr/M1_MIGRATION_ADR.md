@@ -32,10 +32,10 @@ Locked plan constraints (from the governing migration plan):
 - Duel model: deterministic, no RNG. N-wave power comparison reusing the
   tribulation resolution family (waves = 3 + tier). Cultivator effective
   power vs guardian per-wave power; outcomes mirror
-  Radiant / Steady / Shaky / Defeat. Guardian power derives from the realm
-  power requirement at each macro-tier boundary (generator-computed), so a
-  cultivator ready to cross is by construction ready to win — ceremony,
-  stakes, and story, not a new wall.
+  Radiant / Steady / Shaky / Defeat. Guardian power is the boundary
+  tribulation power (generator-computed from realms.json) — the exact scale
+  the duel defense uses — so a cultivator ready to cross blocks every strike
+  and wins Radiant by construction: ceremony, stakes, and story, not a wall.
 - Gating: the breakthrough crossing a macro-tier boundary additionally
   requires the previous tier's guardian defeated. Interior breakthroughs
   unchanged.
@@ -52,7 +52,7 @@ Locked plan constraints (from the governing migration plan):
 
 ## ADR-002 — Meridian generators [Q17: DEFER]
 
-Decision: **deferred to P23/P24** as ley-line attunement, when the 3D world
+Decision: **deferred to P24/P25** as ley-line attunement, when the 3D world
 gives the system physical meaning. M1 locks scope as deferred.
 
 Rationale: the game already carries techniques, gear, soul, talents,
@@ -71,7 +71,7 @@ path by which stakes could ever modify outcomes.
 
 ## ADR-004 — Active-play premium [DEFERRED]
 
-Presence-based meditation multiplier: decide with ADR-002 at P24, when
+Presence-based meditation multiplier: decide with ADR-002 at P25, when
 presence exists. Idle parity remains the default until then.
 
 ## Redesign Proposal R-1 — Deterministic Stakes Ladder [Q19: TABLED]

@@ -136,7 +136,7 @@ func _test_migration() -> void:
 	wf.store_string(JSON.stringify({"save_version": 4, "engine": v4eng, "extra": {}}))
 	wf.close()
 	var loaded: Dictionary = sm.call("load_game")
-	_check(int(loaded.get("save_version", 0)) == 11, "v4 fixture stamped to v11")
+	_check(int(loaded.get("save_version", 0)) == 12, "v4 fixture stamped to v12")
 	_check(str(ge.get("player_focus")) == "cultivate", "v4->v5 focus default")
 	_check(not bool(ge.get("muted")), "v4->v5 muted default false")
 	for p in [slot, bak]:

@@ -191,7 +191,7 @@ func _test_migration() -> void:
 	wf.store_string(JSON.stringify({"save_version": 3, "engine": v3eng, "extra": {}}))
 	wf.close()
 	var loaded: Dictionary = sm.call("load_game")
-	_check(int(loaded.get("save_version", 0)) == 11, "v3 fixture stamped to v11")
+	_check(int(loaded.get("save_version", 0)) == 12, "v3 fixture stamped to v12")
 	_check((ge.get("achievements") as Array).is_empty(), "v3->v4 achievements default empty")
 	for p in [slot, bak]:
 		if FileAccess.file_exists(p):
