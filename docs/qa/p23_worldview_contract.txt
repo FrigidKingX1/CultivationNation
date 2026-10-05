@@ -1,0 +1,61 @@
+# WorldView facade contract
+contract-format: 3
+# Deterministic output. Member removal/edit requires a rule-11
+# contract edit with justification. Semantic requirements:
+# docs/adr/P23_COUPLING_ADDENDUM.md
+script: res://scripts/WorldView.gd
+
+## signals
+
+## exports
+
+## methods (ALL — underscore included; full signatures)
+func _ready() -> void:
+func _engine() -> Node:
+func set_glow(on: bool) -> void:
+func cultivator_screen() -> Vector2:
+func _connect_engine_signals() -> void:
+func _build_camera() -> void:
+func _build_environment() -> void:
+func _on_root_resized() -> void:
+func _sync_viewport_size() -> void:
+func _process(delta: float) -> void:
+func _poll_engine() -> void:
+func _unshaded(c: Color, emission_energy: float = 0.0) -> StandardMaterial3D:
+func _sprite_node(tex: Texture2D, pos: Vector3, pixel: float = 0.01) -> Sprite3D:
+func _build_cultivator() -> void:
+func _poll_cultivator() -> void:
+func has_zone_palette(zone: String) -> bool:
+func current_zone() -> String:
+func apply_zone(zone: String) -> void:
+func _flat_mat(c: Color) -> StandardMaterial3D:
+func _place(mesh: Mesh, mat: Material, pos: Vector3, scl: Vector3 = Vector3.ONE) -> MeshInstance3D:
+func _build_diorama() -> void:
+func _tier_of_realm(realm_index: int) -> int:
+func _zone_of_node() -> String:
+func _build_weather() -> void:
+func _apply_season(s: int) -> void:
+func _apply_tier(t: int) -> void:
+func _element_of_beast(beast_id: String) -> String:
+func _rebuild_beasts(zone: String) -> void:
+func _poll_world_state() -> void:
+func tribulation_active() -> bool:
+func _build_fx() -> void:
+func _oneshot_fx(fxname: String, amount: int, color: Color, pos: Vector3, speed: float) -> GPUParticles3D:
+func _poll_tribulation() -> void:
+func play_tribulation(quality: String, waves: int) -> void:
+func _run_tribulation(quality: String, waves: int) -> void:
+func _flash_strike(i: int) -> void:
+func _show_cracks() -> void:
+func _on_died(_cause: String) -> void:
+func _on_reborn(_life_number: int) -> void:
+func _build_presentation() -> void:
+func _poll_representation() -> void:
+func count_nodes() -> int:
+func _count_recursive(n: Node) -> int:
+func particle_budget() -> Dictionary:
+func _sum_particles(n: Node, out: Dictionary) -> void:
+
+## static methods
+
+## tscn connections targeting World node

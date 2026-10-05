@@ -13,33 +13,35 @@ Engine: `E:\Godot Game Engine\Godot_v4.6.3-stable_win64.exe\Godot_v4.6.3-stable_
 $E = "E:\Godot Game Engine\Godot_v4.6.3-stable_win64.exe\Godot_v4.6.3-stable_win64_console.exe"
 $P = "E:\ClaudeATHome\Projects\Cultivation Nation"
 & $E --headless --path $P --quit                                   # gate: loads clean
-& $E --headless --path $P -s "res://tests/self_test.gd"            # core (17)
-& $E --headless --path $P -s "res://tests/bench_test.gd"           # perf (12)
-& $E --headless --path $P -s "res://tests/save_robustness_test.gd" # saves (76)
-& $E --headless --path $P -s "res://tests/bignum_test.gd"              # big math (55)
-& $E --headless --path $P -s "res://tests/prestige_test.gd"            # ascension (46)
-& $E --headless --path $P -s "res://tests/p19c_test.gd"                # interface systems (39)
-& $E --headless --path $P -s "res://tests/p3_test.gd"               # systems (37)
-& $E --headless --path $P -s "res://tests/p4_test.gd"               # expansion (51)
-& $E --headless --path $P -s "res://tests/p5_test.gd"               # polish (32)
-& $E --headless --path $P -s "res://tests/p6_test.gd"               # controls (39)
-& $E --headless --path $P -s "res://tests/p7_test.gd"               # wiring (20)
-& $E --headless --path $P -s "res://tests/p8_test.gd"               # hints/map (33)
-& $E --headless --path $P -s "res://tests/p9_test.gd"               # tiers (18)
-& $E --headless --path $P -s "res://tests/p10_test.gd"              # bot/records (14)
-& $E --headless --path $P -s "res://tests/p11_test.gd"              # pacing/bands (22)
-& $E --headless --path $P -s "res://tests/p12_test.gd"              # cultivation systems (131)
-& $E --headless --path $P -s "res://tests/p13_test.gd"              # rework (36)
-& $E --headless --path $P -s "res://tests/p14_test.gd"              # presentation (65)
-& $E --headless --path $P -s "res://tests/p15_test.gd"              # depth (61)
-& $E --headless --path $P -s "res://tests/p16_test.gd"              # reliability (13)
-& $E --headless --path $P -s "res://tests/p17_test.gd"              # interface (71)
-& $E --headless --path $P -s "res://tests/p21_test.gd"              # adopted systems (52)
+& $E --headless --path $P -s "res://tests/self_test.gd"            # core (16)
+& $E --headless --path $P -s "res://tests/bench_test.gd"           # perf (11)
+& $E --headless --path $P -s "res://tests/save_robustness_test.gd" # saves (78)
+& $E --headless --path $P -s "res://tests/bignum_test.gd"              # big math (54)
+& $E --headless --path $P -s "res://tests/prestige_test.gd"            # ascension (45)
+& $E --headless --path $P -s "res://tests/p19c_test.gd"                # interface systems (38)
+& $E --headless --path $P -s "res://tests/p3_test.gd"               # systems (36)
+& $E --headless --path $P -s "res://tests/p4_test.gd"               # expansion (50)
+& $E --headless --path $P -s "res://tests/p5_test.gd"               # polish (31)
+& $E --headless --path $P -s "res://tests/p6_test.gd"               # controls (38)
+& $E --headless --path $P -s "res://tests/p7_test.gd"               # wiring (19)
+& $E --headless --path $P -s "res://tests/p8_test.gd"               # hints/map (32)
+& $E --headless --path $P -s "res://tests/p9_test.gd"               # tiers (17)
+& $E --headless --path $P -s "res://tests/p10_test.gd"              # bot/records (13)
+& $E --headless --path $P -s "res://tests/p11_test.gd"              # pacing/bands (21)
+& $E --headless --path $P -s "res://tests/p12_test.gd"              # cultivation systems (130)
+& $E --headless --path $P -s "res://tests/p13_test.gd"              # rework (35)
+& $E --headless --path $P -s "res://tests/p14_test.gd"              # presentation (72)
+& $E --headless --path $P -s "res://tests/p15_test.gd"              # depth (64)
+& $E --headless --path $P -s "res://tests/p16_test.gd"              # reliability (12)
+& $E --headless --path $P -s "res://tests/p17_test.gd"              # interface (82)
+& $E --headless --path $P -s "res://tests/p21_test.gd"              # adopted systems (66)
 & $E --headless --path $P -s "res://tests/guardians_test.gd"         # wardens/duels (79)
 & $E --headless --path $P -s "res://tests/save_v12_migration_test.gd" # save v12 (9)
-& $E --headless --path $P -s "res://tests/soak_test.gd"             # 210y soak
+& $E --headless --path $P -s "res://tests/soak_test.gd"             # 210y soak (exit code)
 & $E --path "E:\Godot Game Engine\Godot_v4.6.3-stable_win64.exe\Godot_v4.6.3-stable_win64.exe" --path $P  # play
 ```
+25 suites, 1049 counted checks (soak passes by exit code). Ground truth
+per release: `docs/qa/p22/sweep_summary.csv`.
 
 ## Loop
 

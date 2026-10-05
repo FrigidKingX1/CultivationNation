@@ -1,0 +1,60 @@
+# P23 Coupling Addendum — Semantic Contracts for Coupled Surfaces
+Status: LOCKED. Companion to P23_WORLD_ADR.md (Q23–Q28 ratified).
+Source: read-only verification pass + handoff §3/§4. The contract file
+enforces EXISTENCE; this doc pins SEMANTICS. Internals may change freely;
+externally observable behavior of these members must not change without a
+rule-11 contract edit with justification.
+
+## C1 — cultivator_screen()  [Main.gd .call() guard]
+Purpose: project the cultivator's position into the coordinate space Main
+uses to anchor floating numbers / toasts / indicators over the avatar.
+- Same name, same signature (probe v3 captures args/return).
+- Same RETURN SPACE. The view owns all coordinate translation
+  (SubViewport -> canvas). Main's call sites must not need changes.
+- Behavior while held at title / world hidden must match current behavior.
+
+## C2 — set_glow(...)  [Main.gd .call() guards, x2 call sites]
+Purpose: cultivator aura / mind-state glow (handoff §3.2).
+- Same name, signature, and argument semantics; glow maps onto the new
+  low-poly material's emission channel. Both call sites keep working.
+
+## C3 — died / reborn reactions  [subscriptions; engine/Main emit]
+- Same signals consumed, same visual beats (buildup -> strikes -> shake ->
+  death fade -> rebirth transition). No new signals invented. Engine-side
+  emission untouched (engine untouched, full stop).
+
+## C4 — _poll_engine()  [13 test call sites]
+The single pump of engine state into the view; tests invoke it directly.
+- Name kept, argument shape kept, idempotent per call, same poll points
+  (last_quality, realm/zone/current-node state).
+- Polling must NOT become implicit/automatic-only — the manual pump is a
+  test dependency. Keep it the single pump.
+
+## C5 — p14 world-path probes  [test-side assertions]
+P23a step 4 (generalized per R14): enumerate EVERY p14 assertion touching
+World subtree paths or camera properties; update all in ONE rule-11 commit,
+one justification comment each. Preserve the path or migrate the assertion
+with citation. No silent path drift.
+
+## C6 — rebuild on seed change  [R16]
+apply_state with a different map_seed (ascension path) must rebuild islands
+and free prior subtrees. p23_world_test asserts node count returns to
+baseline after a seed change. Same post-leak discipline as everything else.
+
+## Determinism margin notes
+- terrain_seed = hash(map_seed, zone_id) — CONFIRMED sound by read-only
+  verification (map_seed written only by generate_map/apply_state).
+  In-code re-verification still runs in P23a step 2 before locking.
+- Map-node world positions: deterministic golden-angle ring layout keyed to
+  (terrain_seed, node index). Never randomized at runtime. Same state =>
+  same positions across sessions (R12).
+- Gate walls are PRESENTATION-ONLY in 0.22.0 (R13). Enforcement remains
+  engine-side (P8 zone gates). Avatar-level enforcement is 0.23.0 scope.
+  No duplicate enforcement logic may be added.
+
+## Enforcement mapping
+- C1/C2/C4 existence + signatures : contract file (probe v3, format 3)
+- C1/C2 return-space semantics    : manual review at the contract-paste
+                                    checkpoint (sign-off before internals)
+- C3/C6                           : p23_world_test spawn/despawn + rebuild
+- C5                              : p14 suite after the rule-11 commit
