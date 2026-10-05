@@ -100,9 +100,14 @@ func _test_world_shell() -> void:
 	# P17-Step3: tabbed panels replace the old scrolling action column.
 	_check(_scene_main.get_node_or_null("UI/Root/SidePanel/PanelScroll/PanelTabs") != null, "tab container docked")
 	_check((_scene_main.get_node("UI/Root/SidePanel/PanelScroll/PanelTabs") as TabContainer).get_tab_count() == 9, "nine tabs staged")
-	var cam: Node = w.get_node_or_null("OrthoCamera")
-	_check(cam != null and bool((cam as Camera3D).current), "ortho camera current")
-	_check(int((cam as Camera3D).projection) == int(Camera3D.PROJECTION_ORTHOGONAL), "camera orthographic")
+	var cam_rig: Node = w.get_node_or_null("CamRig")
+	_check(cam_rig != null, "camera rig staged")
+	# P23 rule-11: fixed orthographic 3/4 cam replaced by the perspective
+	# orbit rig (CamRig/Yaw/Pitch/Camera3D); resize lesson kept in
+	# _sync_viewport_size. See docs/adr/P23_WORLD_ADR.md Camera (P23).
+	var cam: Camera3D = w.get_node_or_null("CamRig/Yaw/Pitch/Camera3D") as Camera3D
+	_check(cam != null and bool(cam.current), "perspective camera current")
+	_check(int(cam.projection) == int(Camera3D.PROJECTION_PERSPECTIVE), "camera perspective")
 	_check(w.get_node_or_null("WorldEnv") != null, "world environment present")
 	# P17-Step3: glow toggle backend for the settings panel.
 	w.call("set_glow", false)
@@ -112,8 +117,12 @@ func _test_world_shell() -> void:
 	_check(w.get_node_or_null("Sun") != null, "sun present")
 
 func _test_diorama() -> void:
+	# P23 rule-11: the diorama slab + seeded peaks are replaced by nine
+	# floating zone islands (Islands/Island_<zone>, active + neighbors
+	# resident). Zone coverage and fallback semantics are unchanged.
+	# See docs/adr/P23_WORLD_ADR.md Topology.
 	var w: Node = _world()
-	_check(w.get_node_or_null("Diorama") != null, "diorama built")
+	_check(w.get_node_or_null("Islands") != null, "island root staged")
 	# Every authored zone resolves to a palette; unknowns fall back cleanly.
 	var f: FileAccess = FileAccess.open("res://data/beasts.json", FileAccess.READ)
 	var beasts: Array = JSON.parse_string(f.get_as_text())
@@ -209,10 +218,12 @@ func _test_weather_tiers_beasts() -> void:
 	_check((w.get_node("BeastGrounds") as Node3D).get_child_count() > 0, "murkfen beasts on grounds")
 
 func _test_budget() -> void:
-	# Sanity budgets enforced by a FAILING test (not convention): measured
-	# 59 nodes / 334 particles across 4 effects (winter peaks 260 per
-	# effect, 532 total). Caps hold ~1.5-2.7x headroom; growth past them
-	# must justify itself in DECISIONS.md, not slip in silently.
+	# Sanity budgets enforced by a FAILING test (not convention). P23
+	# rule-11: gray-box islands hold far under the P14 caps (measured ~75
+	# nodes / ~434 particles), so the caps stand unchanged; P23b dressing
+	# may claim the ADR headroom (450 island + 120 ambient) with bench
+	# evidence, never silently. Growth past caps must justify itself in
+	# DECISIONS.md, not slip in silently.
 	var w: Node = _world()
 	_check(int(w.call("count_nodes")) <= 160, "world node budget")
 	var b: Dictionary = w.call("particle_budget")

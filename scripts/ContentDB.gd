@@ -11,6 +11,7 @@ var achievements: Array = []
 var prestige: Array = []
 var reveal: Array = []
 var guardians: Array = []
+var zones3d: Array = []
 var loaded: bool = false
 
 func _ready() -> void:
@@ -26,6 +27,7 @@ func load_all() -> bool:
 	prestige = _load_json_array("res://data/prestige.json")
 	reveal = _load_json_array("res://data/reveal.json")
 	guardians = _load_json_array("res://data/guardians.json")
+	zones3d = _load_json_array("res://data/zones3d.json")
 	loaded = true
 	return validate()
 
@@ -108,4 +110,37 @@ func validate() -> bool:
 		if not str((g as Dictionary).get("id", "")).begins_with("guardian_"):
 			push_error("ContentDB: guardian id must use guardian_ prefix")
 			return false
+	# P23: zone-id set and gate values are owned by beasts.json; zones3d
+	# carries consistent copies only (single source of truth stays put).
+	var gate_by_zone: Dictionary = {}
+	for b in beasts:
+		var z: String = str((b as Dictionary).get("zone", ""))
+		var m: int = int((b as Dictionary).get("min_realm", 0))
+		if not gate_by_zone.has(z) or m < int(gate_by_zone[z]):
+			gate_by_zone[z] = m
+	for z3 in zones3d:
+		if not (z3.has("id") and z3.has("island_seed") and z3.has("size_radius") and z3.has("height_amp") and z3.has("palette") and z3.has("gate") and z3.has("spawn") and z3.has("weather") and z3.has("props")):
+			push_error("ContentDB: bad zones3d entry")
+			return false
+		var zid: String = str((z3 as Dictionary).get("id", ""))
+		if not gate_by_zone.has(zid):
+			push_error("ContentDB: zones3d id outside beasts zones")
+			return false
+		var zg: Dictionary = (z3 as Dictionary).get("gate", {})
+		if int(zg.get("min_realm", -1)) != int(gate_by_zone[zid]):
+			push_error("ContentDB: zones3d gate disagrees with beasts data")
+			return false
+		var pal: Dictionary = (z3 as Dictionary).get("palette", {})
+		for k in ["low", "mid", "high", "accent", "fog", "sky_tint"]:
+			if not pal.has(k):
+				push_error("ContentDB: zones3d palette incomplete")
+				return false
+		var wth: Dictionary = (z3 as Dictionary).get("weather", {})
+		for k in ["spring", "summer", "autumn", "winter"]:
+			if not wth.has(k):
+				push_error("ContentDB: zones3d weather incomplete")
+				return false
+	if zones3d.size() != gate_by_zone.size():
+		push_error("ContentDB: zones3d zone set must match beasts zones")
+		return false
 	return true

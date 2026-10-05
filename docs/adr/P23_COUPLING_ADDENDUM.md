@@ -72,10 +72,13 @@ baseline after a seed change. Same post-leak discipline as everything else.
 - apply_zone(zone: String) -> void: the zone-switch entry point. IDEMPOTENT
   (re-applying the current zone is a no-op or a cheap refresh). Drives
   island dressing + beast-marker rebuild for that zone.
-- _zone_of_node() -> void: UPDATER, not query (contract shows -> void).
-  Derives zone purely from engine current-node state via _engine() plus
-  static/generated zone tables. No side channels, no caching across
-  apply_state. Verified against the committed contract, not prose.
+- _zone_of_node() -> String: query helper deriving the zone from engine
+  current-node state via _engine() plus static/generated zone tables.
+  The update itself lands in _poll_world_state via apply_zone. No side
+  channels, no caching across apply_state. (Correction: an earlier review
+  misread a wrapped display line as `-> void`; Select-String on the raw
+  contract bytes confirms `-> String`. Lesson: verify signatures against
+  raw bytes, never wrapped display output.)
 
 ### C8 — Tribulation API  [play_tribulation / tribulation_active]
 - play_tribulation(quality: String, waves: int): presentation entry only;

@@ -16,6 +16,9 @@ func set_glow(on: bool) -> void:
 func cultivator_screen() -> Vector2:
 func _connect_engine_signals() -> void:
 func _build_camera() -> void:
+func _update_camera() -> void:
+func _ui_open() -> bool:
+func _unhandled_input(event: InputEvent) -> void:
 func _build_environment() -> void:
 func _on_root_resized() -> void:
 func _sync_viewport_size() -> void:
@@ -23,14 +26,32 @@ func _process(delta: float) -> void:
 func _poll_engine() -> void:
 func _unshaded(c: Color, emission_energy: float = 0.0) -> StandardMaterial3D:
 func _sprite_node(tex: Texture2D, pos: Vector3, pixel: float = 0.01) -> Sprite3D:
+func _flat_mat(c: Color) -> StandardMaterial3D:
 func _build_cultivator() -> void:
 func _poll_cultivator() -> void:
+func _build_cloud_sea() -> void:
+func _load_zones() -> void:
+func _zone_entry(zone: String) -> Dictionary:
 func has_zone_palette(zone: String) -> bool:
 func current_zone() -> String:
 func apply_zone(zone: String) -> void:
-func _flat_mat(c: Color) -> StandardMaterial3D:
-func _place(mesh: Mesh, mat: Material, pos: Vector3, scl: Vector3 = Vector3.ONE) -> MeshInstance3D:
-func _build_diorama() -> void:
+func _stable_hash(s: String) -> int:
+func _terrain_seed(zone: String) -> int:
+func _terrain_h(seed: int, x: float, z: float) -> float:
+func _vertex_hash(zone: String) -> String:
+func _island_zones() -> Array:
+func _resident_zones() -> Array:
+func _build_islands() -> void:
+func _free_island(zone: String) -> void:
+func _ensure_residency() -> void:
+func _grid_mesh(r: float, seed: int, amp: float) -> ArrayMesh:
+func _multimesh_instances(mesh: Mesh, mat: Material, spots: Array) -> MultiMeshInstance3D:
+func _prop_spots(seed: int, r: float, count: int, salt: int) -> Array:
+func _island_node(zone: String) -> Node3D:
+func _dress_island(zone: String) -> void:
+func _poll_seed() -> void:
+func _focus_on_island(zone: String) -> void:
+func _move_anchors(zone: String) -> void:
 func _tier_of_realm(realm_index: int) -> int:
 func _zone_of_node() -> String:
 func _build_weather() -> void:
@@ -40,6 +61,7 @@ func _element_of_beast(beast_id: String) -> String:
 func _rebuild_beasts(zone: String) -> void:
 func _poll_world_state() -> void:
 func tribulation_active() -> bool:
+func _fx_anchor() -> Vector3:
 func _build_fx() -> void:
 func _oneshot_fx(fxname: String, amount: int, color: Color, pos: Vector3, speed: float) -> GPUParticles3D:
 func _poll_tribulation() -> void:

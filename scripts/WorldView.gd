@@ -1,6 +1,10 @@
 extends Node3D
-## WorldView — 2.5D ink-wash diorama. Reads engine state/signals only; owns
-## zero sim state. All sprites route through SpriteFactory (swappable art).
+## WorldView — true-3D island world (P23). Reads engine state/signals only;
+## owns zero sim state. Nine floating zone islands in a cloud sea replace
+## the ink-wash diorama; camera is a perspective orbit rig (player-driven).
+## Facade preserved member-for-member (contract:
+## docs/qa/p23_worldview_contract.txt): method names, signatures, and the
+## C1-C9 semantic surfaces in docs/adr/P23_COUPLING_ADDENDUM.md.
 ## No class_name (project convention). Scripts stay flat in scripts/.
 ## Headless-safe: pure node/resource construction, no draw calls; the tree
 ## exists headless so budget tests can walk it.
@@ -9,19 +13,28 @@ const SF: GDScript = preload("res://scripts/SpriteFactory.gd")
 
 var _headless: bool = false
 var _camera: Camera3D = null
+var _cam_yaw: Node3D = null
+var _cam_pitch: Node3D = null
+var _cam_rig: Node3D = null
 var _sun: DirectionalLight3D = null
 var _world_env: WorldEnvironment = null
 var _env: Environment = null
 var _poll: float = 0.0
 var _elapsed: float = 0.0
-var _base_cam_pos := Vector3(14.0, 12.0, 14.0)
-var _look_target := Vector3(0.0, 1.0, 0.0)
+# Orbit state: yaw/pitch around the focus point, clamped zoom distance.
+var _orbit_yaw: float = 0.6
+var _orbit_pitch: float = -0.5
+var _orbit_dist: float = 26.0
+var _focus_target := Vector3.ZERO
+var _fly_debug: bool = false
 
 func _ready() -> void:
 	_headless = DisplayServer.get_name() == "headless"
 	_build_camera()
 	_build_environment()
-	_build_diorama()
+	_build_cloud_sea()
+	_load_zones()
+	_build_islands()
 	apply_zone("Dewfield")
 	_build_cultivator()
 	_build_weather()
@@ -31,10 +44,12 @@ func _ready() -> void:
 	_build_presentation()
 	_connect_engine_signals()
 	_sync_viewport_size()
+	_focus_on_island(_zone)
 	var root_vp: Viewport = get_tree().root
 	if root_vp != null and not root_vp.size_changed.is_connected(_on_root_resized):
 		root_vp.size_changed.connect(_on_root_resized)
 	set_process(true)
+	set_process_unhandled_input(true)
 
 func _engine() -> Node:
 	return get_node_or_null("/root/GameEngine")
@@ -47,6 +62,10 @@ func set_glow(on: bool) -> void:
 func cultivator_screen() -> Vector2:
 	## P17-Step4: screen anchor for floating numbers. Falls back to viewport
 	## center when headless, cameraless, or mid-build — never errors.
+	## C1: same return space as before (SubViewport -> canvas translation
+	## owned by the view; Main's call sites unchanged).
+	if _camera != null and _cultivator != null and _camera.is_position_in_frustum(_cultivator.global_position):
+		return _camera.unproject_position(_cultivator.global_position + Vector3(0, 2.2, 0))
 	if _camera != null and _cultivator != null:
 		return _camera.unproject_position(_cultivator.global_position + Vector3(0, 2.2, 0))
 	var vp: Viewport = get_viewport()
@@ -56,6 +75,7 @@ func cultivator_screen() -> Vector2:
 
 func _connect_engine_signals() -> void:
 	## Death/rebirth transitions ride engine signals (Main's connect pattern).
+	## C3: same signals consumed, same visual beats, nothing new invented.
 	var ge := _engine()
 	if ge == null:
 		return
@@ -65,16 +85,68 @@ func _connect_engine_signals() -> void:
 		ge.connect("reborn", _on_reborn)
 
 func _build_camera() -> void:
-	## Fixed orthographic 3/4 view. A breath-slow sway gives living parallax
-	## without ever handing the camera to the player.
+	## P23: perspective orbit rig. Drag-rotate, wheel zoom (clamped), focus
+	## target = current island POI. Replaces the fixed orthographic 3/4 cam
+	## (rule-11: p14 camera assertions migrated with citation).
+	_cam_rig = Node3D.new()
+	_cam_rig.name = "CamRig"
+	add_child(_cam_rig)
+	_cam_yaw = Node3D.new()
+	_cam_yaw.name = "Yaw"
+	_cam_rig.add_child(_cam_yaw)
+	_cam_pitch = Node3D.new()
+	_cam_pitch.name = "Pitch"
+	_cam_yaw.add_child(_cam_pitch)
 	_camera = Camera3D.new()
-	_camera.name = "OrthoCamera"
-	_camera.projection = Camera3D.PROJECTION_ORTHOGONAL
-	_camera.size = 16.0
-	# look_at_from_position: valid before entering the tree (look_at errors).
-	_camera.look_at_from_position(_base_cam_pos, _look_target, Vector3.UP)
+	_camera.name = "Camera3D"
+	_camera.projection = Camera3D.PROJECTION_PERSPECTIVE
+	_camera.fov = 55.0
+	_camera.far = 4000.0
 	_camera.current = true
-	add_child(_camera)
+	_cam_pitch.add_child(_camera)
+	_update_camera()
+
+func _update_camera() -> void:
+	if _cam_rig == null or _cam_yaw == null or _cam_pitch == null or _camera == null:
+		return
+	_cam_rig.position = _focus_target
+	_cam_yaw.rotation.y = _orbit_yaw
+	_cam_pitch.rotation.x = _orbit_pitch
+	_camera.position = Vector3(0, 0, _orbit_dist)
+
+func _ui_open() -> bool:
+	## Orbit input suspends while panels or overlays are up (P17 input
+	## contract: panels STOP, world IGNORE — no rotation under UI).
+	var main: Node = get_node_or_null("/root/Main")
+	if main == null:
+		return false
+	for p in ["UI/Root/SidePanel", "UI/Root/HelpOverlay", "UI/Root/TitleOverlay"]:
+		var c: Node = main.get_node_or_null(p) as Node
+		if c != null and (c as Control).visible:
+			return true
+	return false
+
+func _unhandled_input(event: InputEvent) -> void:
+	## Camera input is raw mouse/wheel (Escape raw-key precedent): the 13
+	## action InputMap contract is untouched in 0.22.0. F12 free-fly is a
+	## documented debug key, not an action.
+	if _ui_open():
+		return
+	if event is InputEventMouseMotion and (event as InputEventMouseMotion).button_mask & MOUSE_BUTTON_MASK_LEFT != 0:
+		_orbit_yaw -= (event as InputEventMouseMotion).relative.x * 0.005
+		_orbit_pitch = clampf(_orbit_pitch - (event as InputEventMouseMotion).relative.y * 0.005, -1.2, 0.35)
+		_update_camera()
+	elif event is InputEventMouseButton and (event as InputEventMouseButton).pressed:
+		var b: int = (event as InputEventMouseButton).button_index
+		if b == MOUSE_BUTTON_WHEEL_UP:
+			_orbit_dist = clampf(_orbit_dist - 2.0, 8.0, 60.0)
+			_update_camera()
+		elif b == MOUSE_BUTTON_WHEEL_DOWN:
+			_orbit_dist = clampf(_orbit_dist + 2.0, 8.0, 60.0)
+			_update_camera()
+	elif event is InputEventKey and (event as InputEventKey).pressed and not (event as InputEventKey).echo:
+		if (event as InputEventKey).physical_keycode == KEY_F12:
+			_fly_debug = not _fly_debug
 
 func _build_environment() -> void:
 	_env = Environment.new()
@@ -112,14 +184,34 @@ func _sync_viewport_size() -> void:
 
 func _process(delta: float) -> void:
 	_elapsed += delta
+	_shake = maxf(0.0, _shake - delta * 1.5)
 	if _camera != null:
-		var sway: float = sin(_elapsed * 0.1047) * 0.6
-		_shake = maxf(0.0, _shake - delta * 1.5)
-		var jolt := Vector3.ZERO
+		var jolt := Vector2.ZERO
 		if _shake > 0.01:
-			jolt = Vector3(randf_range(-1.0, 1.0), randf_range(-0.6, 0.6), randf_range(-1.0, 1.0)) * _shake * 0.5
-		_camera.position = _base_cam_pos + Vector3(sway * 0.4, 0.0, -sway * 0.4) + jolt
-		_camera.look_at(_look_target, Vector3.UP)
+			jolt = Vector2(randf_range(-1.0, 1.0), randf_range(-0.6, 0.6)) * _shake * 12.0
+		_camera.h_offset = jolt.x
+		_camera.v_offset = jolt.y
+	if _fly_debug and not _ui_open():
+		var spd: float = 24.0 * delta
+		var move := Vector3.ZERO
+		if Input.is_key_pressed(KEY_W):
+			move.z -= spd
+		if Input.is_key_pressed(KEY_S):
+			move.z += spd
+		if Input.is_key_pressed(KEY_A):
+			move.x -= spd
+		if Input.is_key_pressed(KEY_D):
+			move.x += spd
+		if Input.is_key_pressed(KEY_Q):
+			move.y -= spd
+		if Input.is_key_pressed(KEY_E):
+			move.y += spd
+		if move != Vector3.ZERO:
+			_focus_target += (_cam_yaw.global_transform.basis * move)
+			_focus_target.x = clampf(_focus_target.x, -2000.0, 2000.0)
+			_focus_target.y = clampf(_focus_target.y, -500.0, 500.0)
+			_focus_target.z = clampf(_focus_target.z, -2000.0, 2000.0)
+			_update_camera()
 	if _beast_row != null:
 		for spr in _beast_row.get_children():
 			if spr.has_meta("base_y") and spr is Node3D:
@@ -133,6 +225,9 @@ func _process(delta: float) -> void:
 		_poll_engine()
 
 func _poll_engine() -> void:
+	## C4: the single pump of engine state into the view. Tests invoke it
+	## directly; keep it the single pump, idempotent per call.
+	_poll_seed()
 	_poll_cultivator()
 	_poll_world_state()
 	_poll_tribulation()
@@ -175,6 +270,13 @@ func _sprite_node(tex: Texture2D, pos: Vector3, pixel: float = 0.01) -> Sprite3D
 	s.pixel_size = pixel
 	s.position = pos
 	return s
+
+func _flat_mat(c: Color) -> StandardMaterial3D:
+	var m := StandardMaterial3D.new()
+	m.albedo_color = c
+	m.roughness = 0.95
+	m.metallic = 0.0
+	return m
 
 func _build_cultivator() -> void:
 	_cultivator = Node3D.new()
@@ -295,117 +397,326 @@ func _poll_cultivator() -> void:
 		else:
 			_ready_ring_mat.albedo_color = Color(1.0, 0.35, 0.3)
 
-# --- P14-2: diorama + zone palettes ---
-var _diorama: Node3D = null
-var _mat_ground: StandardMaterial3D = null
-var _mat_rock: Array = []
-var _mat_platform: StandardMaterial3D = null
-var _mat_trim: StandardMaterial3D = null
+# --- P23: floating zone islands (gray-box; dressing lands in P23b) ---
+var _cloud_sea: Node3D = null
+var _islands_root: Node3D = null
+# _islands maps zone id -> built content node (null when not resident).
+# _island_order is the full 9-zone ring; residency = active + neighbors.
+var _islands: Dictionary = {}
+var _island_order: Array = []
+var _zones3d: Array = []
 var _zone: String = ""
-# Zone palettes: ground, rock, fog, sun tint. Display data (not sim): the
-# engine owns zones/elements, the view owns how they look.
-const ZONE_PALETTES := {
-	"Dewfield": {"ground": Color(0.16, 0.24, 0.23), "rock": Color(0.23, 0.33, 0.38), "fog": Color(0.45, 0.55, 0.58), "sun": Color(1.0, 0.96, 0.88)},
-	"Ashbarrow": {"ground": Color(0.25, 0.15, 0.13), "rock": Color(0.32, 0.20, 0.18), "fog": Color(0.55, 0.42, 0.38), "sun": Color(1.0, 0.82, 0.66)},
-	"Gloamdeep": {"ground": Color(0.15, 0.15, 0.20), "rock": Color(0.30, 0.30, 0.38), "fog": Color(0.42, 0.42, 0.52), "sun": Color(0.82, 0.85, 1.0)},
-	"Murkfen": {"ground": Color(0.14, 0.22, 0.14), "rock": Color(0.22, 0.30, 0.22), "fog": Color(0.45, 0.55, 0.42), "sun": Color(0.92, 1.0, 0.85)},
-	"Stonehollow": {"ground": Color(0.26, 0.22, 0.16), "rock": Color(0.42, 0.36, 0.26), "fog": Color(0.60, 0.55, 0.45), "sun": Color(1.0, 0.94, 0.80)},
-	"Stillmere": {"ground": Color(0.18, 0.24, 0.30), "rock": Color(0.45, 0.52, 0.60), "fog": Color(0.62, 0.68, 0.75), "sun": Color(0.92, 0.96, 1.0)},
-	"Pyrefen": {"ground": Color(0.28, 0.14, 0.10), "rock": Color(0.45, 0.22, 0.14), "fog": Color(0.62, 0.40, 0.30), "sun": Color(1.0, 0.72, 0.52)},
-	"Whitefoundry": {"ground": Color(0.30, 0.30, 0.32), "rock": Color(0.55, 0.55, 0.60), "fog": Color(0.65, 0.65, 0.70), "sun": Color(1.0, 0.98, 0.95)},
-	"Thornwake": {"ground": Color(0.13, 0.18, 0.13), "rock": Color(0.25, 0.20, 0.30), "fog": Color(0.40, 0.48, 0.40), "sun": Color(0.85, 0.95, 0.80)},
+var _last_seed: int = -999999
+const _FALLBACK_DEWFIELD := {
+	"id": "Dewfield", "island_seed": "fallback", "size_radius": 200.0,
+	"height_amp": 20,
+	"palette": {"low": [0.112, 0.168, 0.161], "mid": [0.16, 0.24, 0.23], "high": [0.422, 0.497, 0.535], "accent": [1.0, 0.96, 0.88], "fog": [0.45, 0.55, 0.58], "sky_tint": [1.0, 0.972, 0.916]},
+	"gate": {"min_realm": 0, "wall_type": "mist"},
+	"spawn": {"pos": [1200.0, 0.0, 0.0], "facing": 3.1416},
+	"weather": {"spring": "petal", "summer": "clear", "autumn": "ash", "winter": "snow"},
+	"props": {"density": 20, "tree_style": "pine", "rock_style": "crag", "herb_nodes": 3},
 }
 
+func _build_cloud_sea() -> void:
+	_cloud_sea = Node3D.new()
+	_cloud_sea.name = "CloudSea"
+	add_child(_cloud_sea)
+	_islands_root = Node3D.new()
+	_islands_root.name = "Islands"
+	add_child(_islands_root)
+
+func _load_zones() -> void:
+	var cdb: Node = get_node_or_null("/root/ContentDB")
+	if cdb != null:
+		_zones3d = (cdb.get("zones3d") as Array).duplicate()
+	_island_order = []
+	_islands = {}
+	for z in _zones3d:
+		var zid: String = str((z as Dictionary).get("id", ""))
+		if zid != "":
+			_island_order.append(zid)
+			_islands[zid] = null
+
+func _zone_entry(zone: String) -> Dictionary:
+	for z in _zones3d:
+		if str((z as Dictionary).get("id", "")) == zone:
+			return z
+	return _FALLBACK_DEWFIELD
+
 func has_zone_palette(zone: String) -> bool:
-	return ZONE_PALETTES.has(zone)
+	## C7: pure query over the palette table. Unknown zone -> false.
+	if _zones3d.is_empty():
+		return zone == "Dewfield"
+	for z in _zones3d:
+		if str((z as Dictionary).get("id", "")) == zone:
+			return true
+	return false
 
 func current_zone() -> String:
+	## C7: query of stored zone. Never errors while held at title.
 	return _zone
 
 func apply_zone(zone: String) -> void:
-	## Reskin the diorama from the palette table. Unknown zones fall back to
-	## Dewfield rather than erroring (data grows; the view never breaks).
-	var z: String = zone if ZONE_PALETTES.has(zone) else "Dewfield"
+	## C7: the zone-switch entry point. Idempotent: re-applying the current
+	## zone refreshes dressing state without rebuilding geometry.
+	var z: String = zone if has_zone_palette(zone) else "Dewfield"
 	_zone = z
-	var pal: Dictionary = ZONE_PALETTES[z]
-	if _mat_ground != null:
-		_mat_ground.albedo_color = pal["ground"]
-	if _mat_rock.size() == 3:
-		_mat_rock[0].albedo_color = (pal["rock"] as Color).darkened(0.15)
-		_mat_rock[1].albedo_color = pal["rock"]
-		_mat_rock[2].albedo_color = (pal["rock"] as Color).lightened(0.12)
-	if _sun != null:
-		_sun.light_color = pal["sun"]
-	if _env != null:
-		_env.fog_light_color = pal["fog"]
+	_dress_island(z)
+	_ensure_residency()
+	_move_anchors(z)
 
-func _flat_mat(c: Color) -> StandardMaterial3D:
-	var m := StandardMaterial3D.new()
-	m.albedo_color = c
-	m.roughness = 0.95
-	m.metallic = 0.0
-	return m
+func _stable_hash(s: String) -> int:
+	## FNV-1a 32-bit: stable across sessions (GDScript hash() is not).
+	var h: int = 2166136261
+	for i in s.length():
+		h = (h ^ s.unicode_at(i)) * 16777619 & 0xFFFFFFFF
+	return h
 
-func _place(mesh: Mesh, mat: Material, pos: Vector3, scl: Vector3 = Vector3.ONE) -> MeshInstance3D:
-	var mi := MeshInstance3D.new()
-	mi.mesh = mesh
-	mi.material_override = mat
-	mi.position = pos
-	mi.scale = scl
-	_diorama.add_child(mi)
-	return mi
+func _terrain_seed(zone: String) -> int:
+	var ge := _engine()
+	var ms: int = -1
+	if ge != null:
+		ms = int(ge.get("map_seed"))
+	return _stable_hash(str(ms) + "|" + zone)
 
-func _build_diorama() -> void:
-	_diorama = Node3D.new()
-	_diorama.name = "Diorama"
-	add_child(_diorama)
-	_mat_ground = _flat_mat(Color(0.16, 0.24, 0.23))
-	_mat_platform = _flat_mat(Color(0.35, 0.33, 0.30))
-	_mat_trim = _flat_mat(Color(0.75, 0.60, 0.28))
-	for i in range(3):
-		_mat_rock.append(_flat_mat(Color(0.23, 0.33, 0.38)))
-	# Ground slab.
-	var ground := PlaneMesh.new()
-	ground.size = Vector2(220.0, 220.0)
-	_place(ground, _mat_ground, Vector3.ZERO)
-	# Meditation platform: dais + cushion + four standing stones.
-	var dais := CylinderMesh.new()
-	dais.top_radius = 3.0
-	dais.bottom_radius = 3.4
-	dais.height = 0.5
-	dais.radial_segments = 24
-	_place(dais, _mat_platform, Vector3(0, 0.25, 2.0))
-	var cushion := CylinderMesh.new()
-	cushion.top_radius = 0.8
-	cushion.bottom_radius = 0.95
-	cushion.height = 0.3
-	cushion.radial_segments = 16
-	_place(cushion, _mat_trim, Vector3(0, 0.65, 2.0))
-	for i in range(4):
-		var a: float = float(i) * PI / 2.0 + PI / 4.0
-		var stone := BoxMesh.new()
-		stone.size = Vector3(0.7, 2.2 + float(i % 2), 0.7)
-		_place(stone, _mat_platform, Vector3(cos(a) * 5.2, 0.9, 2.0 + sin(a) * 5.2))
-	# Three mountain rings: near/mid/far, seeded-stable composition.
+func _terrain_h(seed: int, x: float, z: float) -> float:
+	## Pure-math heightfield in [-1, 1]. Same inputs => same heights,
+	## every session (no RNG anywhere in terrain).
+	var s: float = float(seed % 100000) / 100000.0
+	return sin(x * 0.11 + s * 6.2831) * 0.5 + sin(z * 0.13 + s * 12.5663) * 0.3 + sin((x + z) * 0.05 + s * 3.1416) * 0.2
+
+func _vertex_hash(zone: String) -> String:
+	## Determinism observable: md5 over a fixed height grid. Same seed =>
+	## identical hash across sessions; different seed => different hash.
+	var entry: Dictionary = _zone_entry(zone)
+	var r: float = float(entry.get("size_radius", 200.0))
+	var seed: int = _terrain_seed(zone)
+	var parts: PackedStringArray = [zone, str(r)]
+	for ix in range(9):
+		for iz in range(9):
+			var x: float = -r + 2.0 * r * float(ix) / 8.0
+			var zz: float = -r + 2.0 * r * float(iz) / 8.0
+			parts.append("%.3f" % _terrain_h(seed, x, zz))
+	return "".join(parts).md5_text()
+
+func _island_zones() -> Array:
+	## Registry of all nine island zones (metadata, not residency).
+	return _island_order.duplicate()
+
+func _resident_zones() -> Array:
+	var out: Array = []
+	if _island_order.is_empty():
+		return out
+	var cur: String = _zone if _island_order.has(_zone) else str(_island_order[0])
+	var i: int = _island_order.find(cur)
+	for k in [-1, 0, 1]:
+		out.append(_island_order[(i + k + _island_order.size()) % _island_order.size()])
+	return out
+
+func _build_islands() -> void:
+	for z in _island_order:
+		_islands[z] = null
+	_ensure_residency()
+
+func _free_island(zone: String) -> void:
+	var n: Node = _islands.get(zone) as Node
+	if n != null and is_instance_valid(n):
+		_islands_root.remove_child(n)
+		n.queue_free()
+	_islands[zone] = null
+
+func _ensure_residency() -> void:
+	## Active island + ring neighbors resident; everything else freed.
+	var want: Dictionary = {}
+	for z in _resident_zones():
+		want[str(z)] = true
+	for z in _island_order:
+		var zid: String = str(z)
+		var has: bool = (_islands.get(zid) as Node) != null
+		if want.has(zid) and not has:
+			_islands[zid] = _island_node(zid)
+		elif not want.has(zid) and has:
+			_free_island(zid)
+
+func _grid_mesh(r: float, seed: int, amp: float) -> ArrayMesh:
+	var st := SurfaceTool.new()
+	st.begin(Mesh.PRIMITIVE_TRIANGLES)
+	var n: int = 16
+	for ix in range(n):
+		for iz in range(n):
+			var x0: float = -r + 2.0 * r * float(ix) / float(n)
+			var x1: float = -r + 2.0 * r * float(ix + 1) / float(n)
+			var z0: float = -r + 2.0 * r * float(iz) / float(n)
+			var z1: float = -r + 2.0 * r * float(iz + 1) / float(n)
+			var vs: Array = [
+				Vector3(x0, _terrain_h(seed, x0, z0) * amp, z0),
+				Vector3(x1, _terrain_h(seed, x1, z0) * amp, z0),
+				Vector3(x1, _terrain_h(seed, x1, z1) * amp, z1),
+				Vector3(x0, _terrain_h(seed, x0, z1) * amp, z1),
+			]
+			for v in [vs[0], vs[2], vs[1], vs[0], vs[3], vs[2]]:
+				st.set_normal(Vector3.UP)
+				st.add_vertex(v)
+	var mesh: ArrayMesh = st.commit()
+	return mesh
+
+func _multimesh_instances(mesh: Mesh, mat: Material, spots: Array) -> MultiMeshInstance3D:
+	var mm := MultiMesh.new()
+	mm.transform_format = MultiMesh.TRANSFORM_3D
+	mm.mesh = mesh
+	mm.instance_count = maxi(spots.size(), 1)
+	for i in spots.size():
+		mm.set_instance_transform(i, spots[i] as Transform3D)
+	var mmi := MultiMeshInstance3D.new()
+	mmi.multimesh = mm
+	if mat != null:
+		mmi.material_override = mat
+	return mmi
+
+func _prop_spots(seed: int, r: float, count: int, salt: int) -> Array:
+	## Deterministic placements: seeded RNG (fixed seed => same layout).
 	var rng := RandomNumberGenerator.new()
-	rng.seed = 137
-	var rings: Array = [
-		{"radius": 16.0, "count": 8, "hmin": 6.0, "hmax": 10.0, "mat": 0},
-		{"radius": 26.0, "count": 10, "hmin": 10.0, "hmax": 16.0, "mat": 1},
-		{"radius": 40.0, "count": 12, "hmin": 16.0, "hmax": 24.0, "mat": 2},
-	]
-	for ring in rings:
-		for i in range(int(ring["count"])):
-			var ang: float = float(i) / float(ring["count"]) * TAU + rng.randf() * 0.4
-			var rad: float = float(ring["radius"]) + rng.randf_range(-1.5, 1.5)
-			var h: float = rng.randf_range(float(ring["hmin"]), float(ring["hmax"]))
-			var w: float = h * rng.randf_range(0.45, 0.65)
-			var peak := CylinderMesh.new()
-			peak.top_radius = 0.0
-			peak.bottom_radius = w
-			peak.height = h
-			peak.radial_segments = 6
-			_place(peak, _mat_rock[int(ring["mat"])], Vector3(cos(ang) * rad, h / 2.0 - 0.6, sin(ang) * rad))
+	rng.seed = seed + salt * 7919
+	var out: Array = []
+	for i in count:
+		var a: float = rng.randf() * TAU
+		var d: float = r * 0.15 + rng.randf() * r * 0.65
+		var x: float = cos(a) * d
+		var zz: float = sin(a) * d
+		var t := Transform3D(Basis(Vector3.UP, rng.randf() * TAU), Vector3(x, 0.0, zz))
+		out.append(t)
+	return out
+
+func _island_node(zone: String) -> Node3D:
+	var entry: Dictionary = _zone_entry(zone)
+	var r: float = float(entry.get("size_radius", 200.0))
+	var amp: float = float(entry.get("height_amp", 20))
+	var seed: int = _terrain_seed(zone)
+	var spawn: Array = ((entry.get("spawn", {}) as Dictionary).get("pos", [0.0, 0.0, 0.0]) as Array)
+	var base := Vector3(float(spawn[0]), 0.0, float(spawn[2]))
+	var pal: Dictionary = entry.get("palette", {})
+	var mid: Color = Color(0.16, 0.24, 0.23)
+	if pal.has("mid") and (pal["mid"] as Array).size() == 3:
+		mid = Color(float(pal["mid"][0]), float(pal["mid"][1]), float(pal["mid"][2]))
+	var root := Node3D.new()
+	root.name = "Island_" + zone
+	root.position = base
+	var ground := MeshInstance3D.new()
+	ground.name = "Ground"
+	ground.mesh = _grid_mesh(r, seed, amp * 0.5)
+	ground.material_override = _flat_mat(mid)
+	root.add_child(ground)
+	var under := MeshInstance3D.new()
+	under.name = "Under"
+	var cone := CylinderMesh.new()
+	cone.top_radius = r
+	cone.bottom_radius = 0.0
+	cone.height = r * 0.6
+	cone.radial_segments = 12
+	under.mesh = cone
+	under.material_override = _flat_mat(mid.darkened(0.35))
+	under.position = Vector3(0, -r * 0.3, 0)
+	root.add_child(under)
+	# Gate wall: presentation-only (R13); enforcement stays engine-side.
+	var wall := MeshInstance3D.new()
+	wall.name = "GateWall"
+	var wb := BoxMesh.new()
+	wb.size = Vector3(2.0, 30.0, r * 0.5)
+	wall.mesh = wb
+	var wtype: String = str(((entry.get("gate", {}) as Dictionary).get("wall_type", "mist")))
+	var wcol := Color(0.6, 0.7, 0.8, 0.4)
+	if wtype == "wind":
+		wcol = Color(0.8, 0.95, 0.85, 0.4)
+	elif wtype == "lightning":
+		wcol = Color(1.0, 0.85, 0.4, 0.4)
+	var wmat := _flat_mat(Color(wcol.r, wcol.g, wcol.b))
+	wmat.transparency = BaseMaterial3D.TRANSPARENCY_ALPHA
+	wmat.albedo_color = wcol
+	wall.material_override = wmat
+	wall.position = Vector3(r * 0.7, 12.0, 0)
+	root.add_child(wall)
+	_islands_root.add_child(root)
+	# Props: one node per class (MultiMesh), deterministic placement.
+	var props: Dictionary = entry.get("props", {})
+	var tree_mesh := CylinderMesh.new()
+	tree_mesh.top_radius = 0.0
+	tree_mesh.bottom_radius = 1.2
+	tree_mesh.height = 4.0
+	tree_mesh.radial_segments = 6
+	var trees := _multimesh_instances(tree_mesh, _flat_mat(mid.darkened(0.2)), _prop_spots(seed, r, int(props.get("density", 20)) / 2, 1))
+	trees.name = "Trees"
+	root.add_child(trees)
+	var rock_mesh := BoxMesh.new()
+	rock_mesh.size = Vector3(1.6, 1.2, 1.6)
+	var rocks := _multimesh_instances(rock_mesh, _flat_mat(mid.lightened(0.15)), _prop_spots(seed, r, int(props.get("density", 20)) / 3, 2))
+	rocks.name = "Rocks"
+	root.add_child(rocks)
+	var herb_mesh := BoxMesh.new()
+	herb_mesh.size = Vector3(0.4, 0.5, 0.4)
+	var herbs := _multimesh_instances(herb_mesh, _flat_mat(Color(0.35, 0.6, 0.3)), _prop_spots(seed, r, int(props.get("herb_nodes", 3)) * 2, 3))
+	herbs.name = "Herbs"
+	root.add_child(herbs)
+	return root
+
+func _dress_island(zone: String) -> void:
+	## Gray-box dressing: tint resident ground to the zone palette mid.
+	## Full dressing lands in P23b; the entry point and idempotence live here.
+	var entry: Dictionary = _zone_entry(zone)
+	var pal: Dictionary = entry.get("palette", {})
+	if not pal.has("mid") or (pal["mid"] as Array).size() != 3:
+		return
+	var mid := Color(float(pal["mid"][0]), float(pal["mid"][1]), float(pal["mid"][2]))
+	var n: Node = _islands.get(zone) as Node
+	if n != null:
+		var g: MeshInstance3D = n.get_node_or_null("Ground") as MeshInstance3D
+		if g != null and g.material_override != null:
+			(g.material_override as StandardMaterial3D).albedo_color = mid
+
+func _poll_seed() -> void:
+	## C6: a changed map_seed (ascension path) rebuilds islands and frees
+	## prior subtrees — same post-leak discipline as everything else.
+	var ge := _engine()
+	if ge == null:
+		return
+	var ms: int = int(ge.get("map_seed"))
+	if ms == _last_seed:
+		return
+	_last_seed = ms
+	for z in _island_order:
+		_free_island(str(z))
+	_ensure_residency()
+	_move_anchors(_zone if _zone != "" else "Dewfield")
+
+func _focus_on_island(zone: String) -> void:
+	var entry: Dictionary = _zone_entry(zone)
+	var spawn: Array = ((entry.get("spawn", {}) as Dictionary).get("pos", [0.0, 0.0, 0.0]) as Array)
+	_focus_target = Vector3(float(spawn[0]), 4.0, float(spawn[2]))
+	_update_camera()
+
+func _move_anchors(zone: String) -> void:
+	## Cultivator, weather, FX, and presentation ride the active island.
+	var entry: Dictionary = _zone_entry(zone)
+	var spawn: Array = ((entry.get("spawn", {}) as Dictionary).get("pos", [0.0, 0.0, 0.0]) as Array)
+	var p := Vector3(float(spawn[0]), 0.0, float(spawn[2]))
+	if _cultivator != null:
+		_cultivator.position = p + Vector3(0, 0, 2.0)
+	if _weather != null:
+		_weather.position = p + Vector3(0, 8.0, 0)
+	if _charge_fx != null:
+		_charge_fx.position = p + Vector3(0, 1.2, 2.0)
+	if _burst_fx != null:
+		_burst_fx.position = p + Vector3(0, 1.5, 2.0)
+	for i in range(_strike_bars.size()):
+		(_strike_bars[i] as MeshInstance3D).position = p + Vector3(-2.5 + float(i) * 1.7, 5.0, 2.0)
+	for i in range(_cracks.size()):
+		(_cracks[i] as MeshInstance3D).position = p + Vector3(-1.5 + float(i) * 1.5, 0.56, 2.0)
+	if _sect_row != null:
+		_sect_row.position = p + Vector3(-5.25, 0, -1.5)
+	if _cauldron != null:
+		_cauldron.position = p + Vector3(-4.2, 0, 5.0)
+	if _beast_row != null:
+		_beast_row.position = p + Vector3(0, 0, -6.0)
+	_focus_on_island(zone)
 
 # --- P14-4: season weather, tier grades, beast grounds ---
 var _weather: GPUParticles3D = null
@@ -422,7 +733,6 @@ const SEASON_WEATHER := [
 	{"color": Color(0.90, 0.60, 0.25), "amount": 200, "fall": 1.8, "rise": false},
 	{"color": Color(0.90, 0.93, 1.00), "amount": 260, "fall": 0.9, "rise": false},
 ]
-# Tier grades: sun energy/color, fog density, backdrop depth, glow push.
 const TIER_GRADES := [
 	{"sun_e": 1.0, "sun": Color(1.0, 0.96, 0.88), "fog": 0.008, "bg": Color(0.07, 0.08, 0.11), "glow": 0.5},
 	{"sun_e": 1.1, "sun": Color(1.0, 0.90, 0.76), "fog": 0.010, "bg": Color(0.08, 0.08, 0.11), "glow": 0.6},
@@ -444,6 +754,9 @@ func _tier_of_realm(realm_index: int) -> int:
 	return 1
 
 func _zone_of_node() -> String:
+	## Derives the zone purely from engine current-node state plus static
+	## tables (C7: no side channels, no caching across apply_state). The
+	## update itself lands in _poll_world_state via apply_zone.
 	var ge := _engine()
 	if ge == null:
 		return "Dewfield"
@@ -517,6 +830,8 @@ func _element_of_beast(beast_id: String) -> String:
 	return ""
 
 func _rebuild_beasts(zone: String) -> void:
+	## Beast markers ride the active island on a deterministic golden-angle
+	## ring keyed to (terrain_seed, index) — same state, same positions.
 	for c in _beast_row.get_children():
 		_beast_row.remove_child(c)
 		c.queue_free()
@@ -524,13 +839,17 @@ func _rebuild_beasts(zone: String) -> void:
 	if cdb == null:
 		return
 	var shown: int = 0
+	var seed: int = _terrain_seed(zone)
 	for b in (cdb.get("beasts") as Array):
 		if shown >= 6:
 			break
 		if str((b as Dictionary).get("zone", "")) != zone:
 			continue
 		var el: String = str((b as Dictionary).get("element", ""))
-		var spr := _sprite_node(SF.make_sprite("beast", str((b as Dictionary).get("id", "")), SF.element_color(el)), Vector3(-7.5 + float(shown) * 3.0, 1.0, -4.0 - float(shown % 2) * 2.5))
+		var spr := _sprite_node(SF.make_sprite("beast", str((b as Dictionary).get("id", "")), SF.element_color(el)), Vector3.ZERO)
+		var a: float = float(shown) * 2.39996 + float(seed % 1000) * 0.001
+		var d: float = 6.0 + float(shown % 3) * 2.5
+		spr.position = Vector3(cos(a) * d, 1.0, sin(a) * d)
 		spr.set_meta("base_y", 1.0)
 		spr.set_meta("phase", float(shown) * 1.1)
 		_beast_row.add_child(spr)
@@ -555,6 +874,17 @@ func _poll_world_state() -> void:
 	if t != _last_tier:
 		_last_tier = t
 		_apply_tier(t)
+	# Gate walls stand only while their grounds are locked (R13:
+	# presentation only — enforcement stays engine-side).
+	var realm_now: int = int(ge.get("realm_index"))
+	for iz in _island_order:
+		var zid: String = str(iz)
+		var n: Node = _islands.get(zid) as Node
+		if n == null:
+			continue
+		var wall: MeshInstance3D = n.get_node_or_null("GateWall") as MeshInstance3D
+		if wall != null:
+			wall.visible = realm_now < int((_zone_entry(zid).get("gate", {}) as Dictionary).get("min_realm", 0))
 
 # --- P14-5: tribulation sequences, death/rebirth, camera shake ---
 var _charge_fx: GPUParticles3D = null
@@ -574,6 +904,12 @@ const QUALITY_BURST := {
 
 func tribulation_active() -> bool:
 	return _trib_active
+
+func _fx_anchor() -> Vector3:
+	## Tribulation FX stages around the cultivator on the active island.
+	if _cultivator != null:
+		return _cultivator.global_position
+	return _focus_target
 
 func _build_fx() -> void:
 	_charge_fx = _oneshot_fx("ChargeFx", 80, Color(1.0, 0.85, 0.4), Vector3(0, 1.2, 2.0), 2.5)
@@ -654,12 +990,14 @@ func play_tribulation(quality: String, waves: int) -> void:
 	_run_tribulation(quality, waves)
 
 func _run_tribulation(quality: String, waves: int) -> void:
-	# Buildup: heavens darken, charge gathers.
+	# Buildup: heavens darken, charge gathers over the cultivator.
+	var anchor: Vector3 = _fx_anchor()
 	var sun_e: float = 1.1
 	if _sun != null:
 		sun_e = _sun.light_energy
 		var dim := create_tween()
 		dim.tween_property(_sun, "light_energy", sun_e * 0.35, 0.5)
+	_charge_fx.position = anchor + Vector3(0, 1.2, 0)
 	_charge_fx.restart()
 	await get_tree().create_timer(0.5).timeout
 	# Strikes: at most a readable handful, whatever the true count.
@@ -673,6 +1011,7 @@ func _run_tribulation(quality: String, waves: int) -> void:
 	_burst_pm.color = qb["color"]
 	_burst_mat.albedo_color = qb["color"]
 	_burst_mat.emission = qb["color"]
+	_burst_fx.position = anchor + Vector3(0, 1.5, 0)
 	_burst_fx.restart()
 	_shake = maxf(_shake, float(qb["shake"]))
 	if quality == "Shaky":
@@ -690,8 +1029,9 @@ func _run_tribulation(quality: String, waves: int) -> void:
 func _flash_strike(i: int) -> void:
 	if i < 0 or i >= _strike_bars.size():
 		return
+	var anchor: Vector3 = _fx_anchor()
 	var bar: MeshInstance3D = _strike_bars[i]
-	bar.position.x = -2.5 + float(i) * 1.7 + randf_range(-0.5, 0.5)
+	bar.position = anchor + Vector3(-2.5 + float(i) * 1.7 + randf_range(-0.5, 0.5), 5.0, 0)
 	bar.visible = true
 	_shake = maxf(_shake, 0.3)
 	var fl := create_tween()
@@ -700,9 +1040,12 @@ func _flash_strike(i: int) -> void:
 	fl.tween_callback(func() -> void: bar.visible = false)
 
 func _show_cracks() -> void:
-	for crack in _cracks:
-		(crack as MeshInstance3D).visible = true
-		(crack as MeshInstance3D).scale = Vector3.ONE
+	var anchor: Vector3 = _fx_anchor()
+	for ci in range(_cracks.size()):
+		var crack: MeshInstance3D = _cracks[ci]
+		crack.position = anchor + Vector3(-1.5 + float(ci) * 1.5, 0.56, 0)
+		crack.visible = true
+		crack.scale = Vector3.ONE
 		var fade := create_tween()
 		fade.tween_interval(0.4)
 		fade.tween_property(crack, "scale", Vector3(1.6, 1.0, 1.6), 0.8)
@@ -710,6 +1053,7 @@ func _show_cracks() -> void:
 
 func _on_died(_cause: String) -> void:
 	## The cultivator slumps grey; fog closes in. Restored on rebirth.
+	## C3: same beats as the diorama era, ported to the island rig.
 	if _body != null:
 		var slump := create_tween().set_parallel(true)
 		slump.tween_property(_body, "modulate", Color(0.45, 0.45, 0.5, 1.0), 0.8)
@@ -731,6 +1075,7 @@ func _on_reborn(_life_number: int) -> void:
 	_burst_pm.color = Color(1.0, 0.85, 0.35)
 	_burst_mat.albedo_color = Color(1.0, 0.85, 0.35)
 	_burst_mat.emission = Color(1.0, 0.85, 0.35)
+	_burst_fx.position = _fx_anchor() + Vector3(0, 1.5, 0)
 	_burst_fx.restart()
 	_last_seen_quality = ""
 	_poll_engine()
