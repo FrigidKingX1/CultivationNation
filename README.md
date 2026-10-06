@@ -42,11 +42,21 @@ $P = "E:\ClaudeATHome\Projects\Cultivation Nation"
 & $E --headless --path $P -s "res://tests/p25_arena_test.gd"          # manual arena (58)
 & $E --headless --path $P -s "res://tests/p26_stakes_test.gd"         # risk pledges (56)
 & $E --headless --path $P -s "res://tests/p27_leyline_test.gd"        # ley-line attunement (90)
+& $E --headless --path $P -s "res://tests/p28_worldui_test.gd"        # world affordances (64)
 & $E --headless --path $P -s "res://tests/soak_test.gd"             # 210y soak (exit code)
 & $E --path "E:\Godot Game Engine\Godot_v4.6.3-stable_win64.exe\Godot_v4.6.3-stable_win64.exe" --path $P  # play
 ```
-30 suites, 1342 counted checks at 0.26.0 (soak passes by exit code). Ground truth
+31 suites, 1406 counted checks at 0.27.0 (soak passes by exit code). Ground truth
 per release: `docs/qa/p22/sweep_summary.csv`.
+
+## Play (the world is the interface)
+
+Walk the active island (WASD), interact with what glows (E), challenge
+lit dens (right-click), meditate at map nodes (E), fly from Nascent Soul
+(F), wander on V. The world announces what it offers: ley-line nodes
+shimmer when the next channel is in reach, dens pulse when challengeable,
+shrine flames burn tall while their warden stands. Panels are the
+archive; the island is the game. Full map: 20 rebindable actions.
 
 ## Loop
 
@@ -99,13 +109,28 @@ Hybrid number formatting to 1e51.
   proportional defeat costs, first-win rewards, victories persist rebirth
   and ascension. Roster + Challenge buttons live in the Beasts tab.
 - Avatar presence (P24): walkable cultivator on the active island (WASD,
-  19 rebindable actions; wander default V), follow camera, meditate at map
+  20 rebindable actions; wander default V), follow camera, meditate at map
   nodes for x1.5 Qi, sword-flight from Nascent Soul, avatar-side zone walls.
+- Manual arena (P25): den challenges resolve on a shared gated clock —
+  one combat tick per landed attack, identical input trace, identical
+  outcome. Knockback-only losses; wins pay through the existing hunt path.
+- Stakes at shrines (P26): pledge Composed/Tempered/Heaven-Challenging
+  per crossing. Heaven-Shaky demotes a realm instead of scarring; marks
+  compound the rate x1.02 to a cap of 7 and persist like soul.
+- Ley-line attunement (0.26.0): 8 sequential meridian channels opened at
+  meditation nodes for qi, x1.08 each to x1.64. World-class persistence:
+  cleared on Samsara and ascension, loaded from saves, counted in
+  offline gains.
+- The world speaks (0.27.0): node shimmer, den pulse, and shrine-flame
+  height are view-side mappings of engine truth (dry-run getters agree
+  with the mutating paths by construction); top bar carries stage, rate,
+  and activity; world-duplicated tabs are marked archive.
 - Procedural sound (synthesized chimes, zero assets, mute + volume slider)
 
 ## Interface (P17 overhaul, P19c modernization, P21 adoption)
 
-Thin top bar (realm, age, animated Qi glow bar, mind, season, speeds, pause,
+Thin top bar (realm, stage, age, animated Qi glow bar, rate-at-a-glance,
+activity, mind, season, speeds, pause,
 sound, panels toggle, bulk-quantity cycler) over the world; bottom action
 dock (Breathe/Drill/Stalk with hotkey hints, Attempt with live readiness +
 forecast + symbol, Stalk, Wander, Recruit, gang duties). Only breathing
@@ -126,7 +151,8 @@ version) gates runs with saves; F1 help overlay; Esc closes help/panels/rail;
 toast notifications; collapsible filterable chronicle; pooled floating
 numbers off the cultivator; shine sweeps on ready/milestone controls; blur
 modal backdrops. Shortcuts: 1/2/3 focus, T tribulation, 7/8/9/0 speed,
-Space pause, H stalk, W wander, M mute, F1 help, Esc close (all rebindable).
+Space pause, H stalk, V wander, E interact, F flight, right-click den
+challenge, M mute, F1 help, Esc close (all rebindable).
 Records (lives, peak realm, kills, years) derived.
 
 ## Pacing (measured, `tests/pacing.gd` + `p11_test`)
@@ -181,5 +207,7 @@ Qi runs on true big math (mantissa+exponent, exact past float range;
 pacing tick-identical to the float era). Ascension prestige: all-time Qi
 feeds sqrt-dampened Dao Marks (first yield at 1M lifetime), spent on a
 3-node tree (Qi flow, lifespan, karma tithe); ascending resets the world
-but never soul, talents, karma, or records. Save schema v10 (Qi economy
-as {m, e} dicts + dao ledger); v9 and older migrate with fill-defaults.
+but never soul, talents, karma, or records. Save schema v14 (chained
+fill-defaults migrations from v1; leyline_open, stakes, guardians,
+coach, offline directive, big-math dicts); v13 and older migrate
+silently.

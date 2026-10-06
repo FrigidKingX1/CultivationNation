@@ -19,3 +19,7 @@ what changed, what was learned. Evidence over narrative.
 - HUD: Stage/Rate/Activity labels; TopBar separation 8->4 after the p21 ratchet caught a 27px spill (mechanism paid for itself).
 - Hints: 3 world-verb ids from existing state (no migration); archive tab tooltips (titles/count untouched).
 - Measured: pacing 73038/13 (sixth); sweep 31/31 CSV 1406 = 1342 + 64 exact; agreement 5 states x ok/reason/line green.
+
+## 2026-10-06 — cage live-fire (hook rejection)
+- The recorder captures the cage firing, not only the work passing through it: a probe commit containing // in a staged .gd was rejected by .git/hooks/pre-commit (tracked source 	ools/git-hooks/pre-commit, mirrors the p21 ratchet's strip-then-match). Probe reverted, tree clean. First cage firing on record.
+- Screenshot phantom (0.27c watch item): a centered Attuning... (VeilLabel text) rendered in 3 of 5 probe captures while the veil flag read hidden at every probed frame and zero Label3Ds existed. Never observed in untampered play; clean parchment capture in the same run. Suspected capture/tween race, undetermined — 1.0-G2 fresh-eyes pass confirms or denies in real play. No code change on a hunch.
