@@ -28,7 +28,12 @@ var _float_pool: Array = []
 func _float_layer() -> Node:
 	return get_node_or_null("Root/FloatLayer")
 
-func spawn_float(screen_pos: Vector2, text: String, color: Color) -> void:
+func spawn_float(screen_pos: Vector2, text: String, color: Color, tag: String = "") -> void:
+	## Tagged spawns coalesce: a live floater carrying the same tag is
+	## reused (text refreshed, flight restarted) instead of stacking a
+	## second label beside it. Untagged spawns keep the old free-list path.
+	## 1.0b: breakthrough floaters share tag "realm" — at 1000x, crossings
+	## land inside one floater lifetime and rendered as soup without this.
 	var layer: Node = _float_layer()
 	if layer == null:
 		return
@@ -38,12 +43,23 @@ func spawn_float(screen_pos: Vector2, text: String, color: Color) -> void:
 		layer.add_child(pre)
 		_float_pool.append(pre)
 	var lab: Label = null
-	for l in _float_pool:
-		if not (l as Label).visible:
-			lab = l
-			break
+	if tag != "":
+		for l in _float_pool:
+			if ((l as Label).visible and str((l as Label).get_meta("tag", "")) == tag):
+				lab = l
+				break
+	if lab == null:
+		for l in _float_pool:
+			if not (l as Label).visible:
+				lab = l
+				break
 	if lab == null:
 		lab = _float_pool[0]
+	if lab.has_meta("tw"):
+		var old: Variant = lab.get_meta("tw")
+		if old is Tween and (old as Tween).is_valid():
+			(old as Tween).kill()
+	lab.set_meta("tag", tag)
 	lab.text = text
 	lab.modulate = color
 	lab.position = (screen_pos as Vector2) + Vector2(-40.0, -10.0)
@@ -51,6 +67,7 @@ func spawn_float(screen_pos: Vector2, text: String, color: Color) -> void:
 	lab.pivot_offset = Vector2(40.0, 10.0)
 	lab.visible = true
 	var tw: Tween = create_tween().set_parallel(true)
+	lab.set_meta("tw", tw)
 	tw.tween_property(lab, "scale", Vector2(1.0, 1.0), 0.15).set_trans(Tween.TRANS_BACK).set_ease(Tween.EASE_OUT)
 	tw.tween_property(lab, "position:y", lab.position.y - 45.0, 0.8).set_trans(Tween.TRANS_CUBIC).set_ease(Tween.EASE_OUT)
 	tw.chain().tween_property(lab, "modulate:a", 0.0, 0.4).set_delay(0.25)

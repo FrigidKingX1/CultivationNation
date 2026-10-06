@@ -258,7 +258,9 @@ func _float_quality(ge: Node) -> void:
 	if not ui.has_method("spawn_float") or not w.has_method("cultivator_screen"):
 		return
 	var q: String = str(ge.get("last_quality"))
-	ui.call("spawn_float", w.call("cultivator_screen"), "Realm %d (%s)" % [int(ge.get("realm_index")), q], QUALITY_FLOAT.get(q, Color.WHITE))
+	# 1.0b: breakthrough floaters coalesce under tag "realm" — rapid
+	# crossings refresh one label instead of stacking soup.
+	ui.call("spawn_float", w.call("cultivator_screen"), "Realm %d (%s)" % [int(ge.get("realm_index")), q], QUALITY_FLOAT.get(q, Color.WHITE), "realm")
 
 func _check_backlash(ge: Node) -> void:
 	if bool(ge.get("last_backlash")):

@@ -67,6 +67,7 @@ func _process(_delta: float) -> bool:
 		_test_affordance_mappings()
 		_test_update_applies()
 		_test_archive_tabs()
+		_test_floater_coalesce()
 		_test_budgets()
 		if _failures == 0:
 			print("WORLDUI-TEST PASS")
@@ -246,6 +247,29 @@ func _test_archive_tabs() -> void:
 			idx = i
 	_check(idx >= 0, "beasts tab found")
 	_check(str(tabs.get_tab_tooltip(idx)).find("Archive") >= 0, "beasts tab carries archive emphasis")
+
+func _visible_floats() -> Array:
+	var out: Array = []
+	var layer: Node = _scene_main.get_node_or_null("UI/Root/FloatLayer")
+	if layer == null:
+		return out
+	for c in layer.get_children():
+		if (c as Label).visible:
+			out.append(c)
+	return out
+
+func _test_floater_coalesce() -> void:
+	# 1.0b: rapid breakthrough floaters coalesce under one tag instead of
+	# stacking soup. Untagged spawns keep the free-list path.
+	var ui: Node = _scene_main.get_node("UI")
+	ui.call("spawn_float", Vector2(640, 360), "Realm 1 (Radiant)", Color.WHITE, "realm")
+	ui.call("spawn_float", Vector2(640, 360), "Realm 2 (Radiant)", Color.WHITE, "realm")
+	var live: Array = _visible_floats()
+	_check(live.size() == 1, "tagged pair coalesces to one label")
+	_check(str((live[0] as Label).text) == "Realm 2 (Radiant)", "coalesced label carries the latest crossing")
+	ui.call("spawn_float", Vector2(100, 100), "Qi +5", Color.WHITE)
+	ui.call("spawn_float", Vector2(200, 200), "Qi +7", Color.WHITE)
+	_check(_visible_floats().size() == 3, "untagged spawns keep free-list path")
 
 func _test_budgets() -> void:
 	var w: Node = _world()
