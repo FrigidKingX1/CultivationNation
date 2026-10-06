@@ -2,7 +2,7 @@ extends Node
 ## SaveManager autoload — versioned JSON saves, backup, offline progress. Original code.
 ## Stores only IDs/flags/stats, never authored text (avoids CoFD browser-limit failure mode).
 
-const SAVE_VERSION: int = 12
+const SAVE_VERSION: int = 13
 const SLOT_PATH: String = "user://cultivation_nation_save.json"
 const BACKUP_PATH: String = "user://cultivation_nation_save.bak.json"
 const OFFLINE_CAP_SECONDS: int = 8 * 3600
@@ -235,6 +235,15 @@ func _migrate(d: Dictionary) -> void:
 		if not eng12.has("guardians"):
 			eng12["guardians"] = {"defeated": [], "attempts": {}}
 		d["engine"] = eng12
+	if ver < 13:
+		# v12 -> v13: P26 stakes. Old saves never pledged: preference
+		# defaults to composed, no heaven marks. Fill-defaults only.
+		var eng13: Dictionary = d.get("engine", {})
+		if not eng13.has("stakes_preference"):
+			eng13["stakes_preference"] = "composed"
+		if not eng13.has("heaven_marks"):
+			eng13["heaven_marks"] = 0
+		d["engine"] = eng13
 	d["save_version"] = SAVE_VERSION
 
 func apply_offline(saved_unix: int, now_unix: int = -1) -> Dictionary:

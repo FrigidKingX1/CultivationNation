@@ -732,6 +732,7 @@ func _on_manual_breakthrough() -> void:
 		if ui_fx != null and ui_fx.has_method("play_breakthrough_fx"):
 			ui_fx.call("play_breakthrough_fx")
 		_check_backlash(ge)
+		_voice_demotion(ge)
 		_maybe_celebrate()
 	else:
 		_log("Tribulation unready or failed (readiness %d%%)." % int(ge.call("readiness_pct", _auto_breakthrough_power, need, bonus)), "warn")
@@ -1811,6 +1812,7 @@ func _process(delta: float) -> void:
 				if ui_fx != null and ui_fx.has_method("play_breakthrough_fx"):
 					ui_fx.call("play_breakthrough_fx")
 				_check_backlash(ge)
+				_voice_demotion(ge)
 				_maybe_celebrate()
 			else:
 				_log("Tribulation failed (power %.0f < need %.0f). Half Qi lost." % [_auto_breakthrough_power, need], "warn")
@@ -1928,7 +1930,7 @@ func _refresh_shrine_den() -> void:
 	if world.has_method("take_shrine_request"):
 		var gid: String = str(world.call("take_shrine_request"))
 		if gid != "":
-			_on_guardian(gid)
+			_show_pledge(gid)
 	if world.has_method("take_den_outcome"):
 		var res: Dictionary = world.call("take_den_outcome")
 		if not res.is_empty():
@@ -1949,6 +1951,80 @@ func _refresh_shrine_den() -> void:
 			else:
 				_log("Driven back to the zone mouth. No shame in retreating.", "warn")
 				_sfx("fail")
+
+func _pledge_name(gid: String) -> String:
+	var ge: Node = get_node_or_null("/root/GameEngine")
+	if ge != null:
+		for g in (ge.call("guardian_ids_in_order") as Array):
+			if str(g) == gid:
+				var d: Dictionary = ge.call("_guardian_def", gid)
+				if not d.is_empty():
+					return str(d.get("name", gid))
+	return gid
+
+func _build_pledge_dialog(gid: String) -> AcceptDialog:
+	## P26: shrine pledge modal. Stake chooser (current marked), plain
+	## consequence lines, plus the warden's challenge (existing duel flow).
+	## Pure build (headless-testable); _show_pledge presents it.
+	var ge: Node = get_node_or_null("/root/GameEngine")
+	var cur: String = str(ge.call("get_stake")) if ge != null else "composed"
+	var dlg := AcceptDialog.new()
+	dlg.name = "PledgeDialog"
+	dlg.title = "Warden's Shrine"
+	dlg.ok_button_text = "Leave"
+	var box := VBoxContainer.new()
+	box.name = "PledgeBox"
+	box.add_theme_constant_override("separation", 8)
+	dlg.add_child(box)
+	var head := Label.new()
+	head.text = "Pledge how you will climb. The heavens remember (%s)." % cur.capitalize()
+	head.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
+	box.add_child(head)
+	var lines: Dictionary = {
+		"composed": "Composed: the crossing as it has always been.",
+		"tempered": "Tempered: harder Radiant, +25% Steady rewards. No demotion can touch you.",
+		"heaven": "Heaven-Challenging: hardest Radiant, rare cache on triumph — but a Shaky crossing casts you down a realm. Re-pledge freely at any shrine.",
+	}
+	for stake in ["composed", "tempered", "heaven"]:
+		var b := Button.new()
+		var mark: String = " (pledged)" if stake == cur else ""
+		b.text = "%s%s — %s" % [str(stake).capitalize(), mark, str(lines.get(stake, ""))]
+		b.pressed.connect(_on_pledge.bind(dlg, gid, stake))
+		box.add_child(b)
+	var duel := Button.new()
+	duel.text = "Face the warden"
+	duel.pressed.connect(_on_pledge_duel.bind(dlg, gid))
+	box.add_child(duel)
+	return dlg
+
+func _on_pledge(dlg: Window, _gid: String, stake: String) -> void:
+	var ge: Node = get_node_or_null("/root/GameEngine")
+	if ge != null:
+		ge.call("set_stake", stake)
+		_log("Pledged: %s." % stake.capitalize())
+	_sfx("click")
+	dlg.hide()
+	dlg.queue_free()
+
+func _on_pledge_duel(dlg: Window, gid: String) -> void:
+	dlg.hide()
+	dlg.queue_free()
+	_on_guardian(gid)
+
+func _show_pledge(gid: String) -> void:
+	var ui: Node = get_node_or_null("UI")
+	if ui == null:
+		return
+	MODAL.present(ui, _build_pledge_dialog(gid))
+
+func _voice_demotion(ge: Node) -> void:
+	## P26: names a Heaven-Shaky demotion after the crossing resolves.
+	var dem: Dictionary = ge.get("last_demotion")
+	if dem.is_empty():
+		return
+	_log("Heaven-Challenging Shaky: cast down from realm %d to %d — the climb resumes from Late." % [int(dem.get("from", 0)), int(dem.get("to", 0))], "warn")
+	_toast("Cast down a realm", "warn")
+	_sfx("fail")
 
 func _refresh_coach() -> void:
 	## P21: first-session coach marks (godot-idle skeleton fitted to our
@@ -2029,7 +2105,11 @@ func _refresh_breakthrough_btn() -> void:
 	var bonus: float = float(ge.call("best_technique_bonus"))
 	var eff: float = (_auto_breakthrough_power + float(ge.call("artifact_power_bonus"))) * float(ge.get("_prep_power"))
 	var fill: float = ge.call("fill_ratio")
-	var fc: Dictionary = ge.call("forecast_quality", eff, need, bonus, fill, float(ge.get("_ward_power")))
+	# P26: the forecast honors the pledged stake (Composed default keeps
+	# legacy bands bit-for-bit); the stake rides the button as plain text
+	# (ASCII only — the p17 glyph set stays untouched).
+	var stake: String = str(ge.call("get_stake"))
+	var fc: Dictionary = ge.call("forecast_quality", eff, need, bonus, fill, float(ge.get("_ward_power")), stake)
 	var pct: int = int(ge.call("readiness_pct", _auto_breakthrough_power, need, bonus))
 	# P17-Step2 colorblind-safe readiness: symbol alongside color and number.
 	# Glyphs restricted to the verified HUD set (p17 coverage test): » ! ×.
@@ -2037,6 +2117,8 @@ func _refresh_breakthrough_btn() -> void:
 	var sym: String = "» " if pct >= 100 else ("! " if pct >= 70 else "× ")
 	_set_shine(b, pct >= 100)
 	b.text = "%sAttempt Tribulation (%d%% · %s)" % [sym, pct, str(fc.get("quality", "?"))]
+	if stake != "composed":
+		b.text += " · " + stake.capitalize()
 	# P22: a standing warden bars the crossing — name it on the button.
 	var gate: Dictionary = ge.call("guardian_gate")
 	if bool(gate.get("blocked", false)):

@@ -107,6 +107,15 @@ var deviation: int = 0
 var lifespan_scars: int = 0
 var last_quality: String = ""
 var last_tribulation: Array = []
+# P26 — stakes preference + demotion record + heaven marks. stakes_preference
+# persists Samsara AND ascension (player intent, R-S11); last_demotion is
+# transient like last_tribulation. Heaven marks (earned, capped 7) persist
+# like soul (soul-class persistence).
+var stakes_preference: String = "composed"
+var last_demotion: Dictionary = {}
+var heaven_marks: int = 0
+const HEAVEN_MARK_MULT := 1.02
+const HEAVEN_MARK_CAP := 7
 # P15-Step4: toxicity backlash. Heavenly lightning agitates pill residue:
 # crossing triumphant at toxicity >= BACKLASH_TOXICITY scars all the same.
 # Threshold tuned to Step-0 data (natural max 12 = one drink; 24 = a
@@ -301,11 +310,34 @@ func _recompute_rate() -> void:
 	# default-off claim stays auditable by eyeball (R-S13).
 	if _presence_active:
 		raw *= PRESENCE_MULT
+	# P26: heaven marks compound the compiled rate (R-S7: heaven_mark_mult,
+	# qi-rate scale, distinct from PRESENCE_MULT and FLY_MULT). Earned
+	# state only — the default path never holds marks, so the branch
+	# below never fires for the pacing bot (R-S13).
+	if heaven_marks > 0:
+		raw *= pow(HEAVEN_MARK_MULT, float(heaven_marks))
 	if is_finite(raw):
 		_last_good_rate = raw
 	else:
 		raw = _last_good_rate
 	_cached_qi_per_tick = BN.from_float(raw)
+
+func set_stake(stake: String) -> void:
+	## P26: pledge a stake (composed/tempered/heaven). Unknown values are
+	## refused silently — the current pledge stands.
+	if ["composed", "tempered", "heaven"].has(str(stake)):
+		stakes_preference = str(stake)
+
+func get_stake() -> String:
+	return stakes_preference
+
+func _crossed_tier(from_realm: int, to_realm: int) -> bool:
+	## True when a crossing moved across a macro-tier boundary.
+	if _realm_table.is_empty():
+		return false
+	var a: int = int((_realm_table[clampi(from_realm, 0, _realm_table.size() - 1)] as Dictionary).get("macro_tier", 0))
+	var b: int = int((_realm_table[clampi(to_realm, 0, _realm_table.size() - 1)] as Dictionary).get("macro_tier", 0))
+	return a != b and a > 0 and b > 0
 
 func set_presence(active: bool) -> void:
 	## P24b: avatar meditating at a map node. View-driven, runtime-only.
@@ -460,6 +492,19 @@ func attempt_breakthrough(power: float, required: float, power_mult: float = 1.0
 		last_quality = "Warded"
 		last_tribulation = []
 		return false
+	# P26: Heaven-Shaky demotion needs somewhere to restore TO. Snapshot
+	# run-state pre-combine (the attempt is deterministic, so the snapshot
+	# is well-defined). Big values are immutable: plain assignment shares
+	# safely. Permanent classes (achievements, soul, marks, victory,
+	# preference) are deliberately NOT snapshot — R-S11, they persist.
+	last_demotion = {}
+	var snap: Dictionary = {
+		"realm_index": realm_index, "qi": qi,
+		"qi_bottleneck": qi_bottleneck, "qi_per_tick": qi_per_tick,
+		"cached": _cached_qi_per_tick,
+		"deviation": deviation,
+		"prep": _prep_power, "ward": _ward_power,
+	}
 	## Winter tribulations strike 10% harder through the cultivator: the season
 	## favors the defender. Engine-side, so all callers share it.
 	# P12-4: pill charges ride this attempt, then burn out win or lose.
@@ -482,7 +527,7 @@ func attempt_breakthrough(power: float, required: float, power_mult: float = 1.0
 		_shift_purity(-2.0 * (1.0 - r))
 		return false
 	var fill: float = fill_ratio()
-	var fc: Dictionary = forecast_quality(eff_power, required, power_mult, fill, charged_ward)
+	var fc: Dictionary = forecast_quality(eff_power, required, power_mult, fill, charged_ward, stakes_preference)
 	_prep_power = 1.0
 	_ward_power = 1.0
 	last_backlash = false
@@ -525,6 +570,49 @@ func attempt_breakthrough(power: float, required: float, power_mult: float = 1.0
 	# P11a pacing: each breakthrough multiplies the foundation rate by the same
 	# x4 as bottlenecks, so per-realm effort holds steady instead of doubling.
 	qi_per_tick = BN.of(qi_per_tick).times_float(4.0)
+	# P26 stakes (pledged at shrines; Composed reaches none of this).
+	# Steady+ under Tempered/Heaven keeps a 25% head-start of the crossed
+	# requirement (heaven's favor carries over; opt-in only).
+	if stakes_preference != "composed" and (last_quality == "Radiant" or last_quality == "Steady"):
+		qi = BN.of(snap.get("qi_bottleneck")).times_float(0.25)
+	# P26 Heaven-Shaky demotion: selective state restoration (Amendment 2).
+	# A naive realm decrement would leak this attempt's bottleneck/rate x4
+	# into the demoted state (rate-stacking exploit). Instead restore run
+	# state from the pre-attempt snapshot, then stand at the Late-band
+	# minimum of the origin realm. Permanent classes (soul XP granted
+	# above, achievements polled below, victory, marks) persist.
+	# Standard Shaky deviation is REPLACED (no double punishment).
+	if stakes_preference == "heaven" and last_quality == "Shaky" and int(snap.get("realm_index", 0)) > 0:
+		realm_index = int(snap.get("realm_index", 0))
+		qi_bottleneck = snap.get("qi_bottleneck")
+		qi_per_tick = snap.get("qi_per_tick")
+		# P26: the cached compiled rate restores bit-identically too — the
+		# success path never recomputes it, so direct assignment (not a
+		# fresh recompute) is the only exact restoration.
+		_cached_qi_per_tick = snap.get("cached")
+		_prep_power = float(snap.get("prep", 1.0))
+		_ward_power = float(snap.get("ward", 1.0))
+		deviation = int(snap.get("deviation", 0))
+		qi = BN.of(snap.get("qi_bottleneck")).times_float(2.0 / 3.0)
+		# P26: demotion scars are FLAT (+2, backlash-magnitude), not the
+		# failure-path proportional formula — that formula reads r>=1 on
+		# every successful attempt (readiness gating), so it would always
+		# yield zero here. Documented deviation; the deterrent is real.
+		lifespan_scars += 2
+		_recompute_lifespan()
+		last_demotion = {"from": realm_index + 1, "to": realm_index, "stake": "heaven"}
+	elif stakes_preference == "heaven" and last_quality == "Shaky":
+		# Realm 0: nothing exists to demote into — flat scars stand in for
+		# the proportional cost (same vacuity reasoning as above).
+		lifespan_scars += 2
+		_recompute_lifespan()
+	# P26 Heaven-Radiant: material cache + tier-crossing mark (cap 7).
+	# Marks only where a macro tier was actually crossed (negative case:
+	# interior Radiants pay material, never marks).
+	if stakes_preference == "heaven" and last_quality == "Radiant":
+		_gain_herbs(100.0)
+		if _crossed_tier(int(snap.get("realm_index", 0)), realm_index) and heaven_marks < 7:
+			heaven_marks += 1
 	# P12-2: surviving the heavens settles the heart (+25, +40 under an
 	# attuned stonebell focus — the settling perk).
 	var settle: float = 40.0 if (str(_tech_def(focus_technique).get("perk", "none")) == "settling" and attunement_of(focus_technique) >= 60.0) else 25.0
@@ -1345,14 +1433,18 @@ func readiness_pct(power: float, required: float, power_mult: float = 1.0) -> fl
 		return 100.0
 	return 100.0 * (power + artifact_power_bonus()) * power_mult * season_power_bonus() / required
 
-func forecast_quality(power: float, required: float, power_mult: float, fill: float, ward_mult: float = 1.0) -> Dictionary:
+func forecast_quality(power: float, required: float, power_mult: float, fill: float, ward_mult: float = 1.0, stake: String = "composed") -> Dictionary:
 	## Deterministic wave resolution, no state change. Each strike tests the
 	## regenerating shield (defense re-raises per wave); leaks accumulate
 	## against core health. Returns {quality, waves, leak, core}.
+	## P26 stakes shift quality thresholds ONLY (combine untouched):
+	## composed = legacy bands; tempered demands a brim-full dantian for
+	## Radiant; heaven demands fullness AND flawless channels. Steady/Shaky
+	## bands never move. R-S7: gates are fill/purity fractions (dimensionless).
 	var waves_n: int = _waves_for_realm(realm_index)
 	var out: Array = []
 	if waves_n <= 0:
-		var q0: String = "Radiant" if fill >= 0.999 else "Steady"
+		var q0: String = "Radiant" if (fill >= 0.999 and _radiant_gates_open(stake, fill)) else "Steady"
 		return {"quality": q0, "waves": out, "leak": 0.0, "core": 1.0}
 	var req: float = maxf(required, 0.001)
 	## power arrives pre-combined: (base + artifact) x prep. The forecast
@@ -1375,11 +1467,24 @@ func forecast_quality(power: float, required: float, power_mult: float, fill: fl
 		leak += strike - blocked
 		out.append({"strike": strike, "blocked": blocked, "leaked": strike - blocked})
 	var q: String = "Shaky"
-	if leak <= 0.0:
+	if leak <= 0.0 and _radiant_gates_open(stake, fill):
 		q = "Radiant"
 	elif leak / maxf(core, 0.001) < 0.3:
 		q = "Steady"
 	return {"quality": q, "waves": out, "leak": leak, "core": core}
+
+# P26 threshold constants (R-S7): fill fractions and deviation gates are
+# dimensionless difficulty dials. Tempered demands a brim-full dantian;
+# heaven demands fullness AND flawless channels.
+const TEMPERED_RADIANT_FILL := 0.999
+const HEAVEN_RADIANT_FILL := 0.999
+
+func _radiant_gates_open(stake: String, fill: float) -> bool:
+	if stake == "heaven":
+		return fill >= HEAVEN_RADIANT_FILL and deviation == 0
+	if stake == "tempered":
+		return fill >= TEMPERED_RADIANT_FILL
+	return true
 
 func set_beast_pool(pool: Array) -> void:
 	_beast_pool = pool.duplicate()
@@ -1809,6 +1914,7 @@ func get_state() -> Dictionary:
 		"attunement": attunement.duplicate(), "victorious": victorious,
 		"offline_mortality": offline_mortality,
 		"guardians": {"defeated": (guardians.get("defeated", []) as Array).duplicate(), "attempts": (guardians.get("attempts", {}) as Dictionary).duplicate()},
+		"stakes_preference": stakes_preference, "heaven_marks": heaven_marks,
 	}
 
 func apply_state(d: Dictionary) -> void:
@@ -1877,6 +1983,11 @@ func apply_state(d: Dictionary) -> void:
 	victorious = bool(d.get("victorious", false))
 	var om: String = str(d.get("offline_mortality", "vigil"))
 	offline_mortality = om if ["vigil", "unfettered"].has(om) else "vigil"
+	# P26: stakes preference + heaven marks persist (player intent and
+	# earned soul-class state). Unknown preferences fall back to composed.
+	var sp: String = str(d.get("stakes_preference", "composed"))
+	stakes_preference = sp if ["composed", "tempered", "heaven"].has(sp) else "composed"
+	heaven_marks = clampi(int(d.get("heaven_marks", 0)), 0, HEAVEN_MARK_CAP)
 	# P22: guardians persist rebirth AND ascend (sword dao remembered).
 	# Validate shapes: defeated must be an id array, attempts an id->int map.
 	guardians = {"defeated": [], "attempts": {}}

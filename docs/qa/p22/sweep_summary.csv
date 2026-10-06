@@ -1,6 +1,6 @@
 "Suite","Exit","PassLines"
 "self_test.gd","0","16"
-"bench_test.gd","1","10"
+"bench_test.gd","0","11"
 "save_robustness_test.gd","0","78"
 "bignum_test.gd","0","54"
 "prestige_test.gd","0","45"
@@ -27,3 +27,4 @@
 "p23_world_test.gd","0","24"
 "p24_presence_test.gd","0","59"
 "p25_arena_test.gd","0","58"
+"p26_stakes_test.gd","0","56"

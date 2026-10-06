@@ -33,7 +33,7 @@ func _initialize() -> void:
 	print("SAVE-V12-TEST start")
 	_wipe()
 	var SM: GDScript = load("res://scripts/SaveManager.gd")
-	_check(int(SM.get("SAVE_VERSION")) == 12, "save version is 12")
+	_check(int(SM.get("SAVE_VERSION")) == 13, "save version is 13")
 	var GE: GDScript = load("res://scripts/GameEngine.gd")
 	var ge: Node = GE.new()
 	root.add_child(ge)
@@ -43,7 +43,7 @@ func _initialize() -> void:
 	# v11 payload: engine state with no guardians key at all.
 	_write({"save_version": 11, "saved_unix": 1, "engine": {"tick_count": 7, "realm_index": 3}, "extra": {}})
 	var loaded: Dictionary = sm.call("load_game")
-	_check(int(loaded.get("save_version", 0)) == 12, "v11 fixture stamped to v12")
+	_check(int(loaded.get("save_version", 0)) == 13, "v11 fixture stamped to v13")
 	var eng: Dictionary = loaded.get("engine", {})
 	_check((eng.get("guardians", {}) as Dictionary).get("defeated", ["x"]).is_empty(), "v11 gains empty victories")
 	_check(((eng.get("guardians", {}) as Dictionary).get("attempts", {"x": 1}) as Dictionary).is_empty(), "v11 gains empty attempts")
