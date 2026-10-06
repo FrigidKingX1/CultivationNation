@@ -405,6 +405,9 @@ func _poll_cultivator() -> void:
 # cultivator_screen() keeps projecting it (C1 return-space unchanged).
 var _avatar_state: String = "idle"
 const WALK_SPEED := 8.0
+# R-S7: FLY_MULT scales AVATAR-MOVEMENT speed (units/sec multiplier).
+# It must not be confused with PRESENCE_MULT, which scales the COMPILED
+# QI RATE engine-side. Two constants, two scales, both named.
 const FLY_MULT := 2.5
 const INTERACT_RADIUS := 6.0
 var _fly_mult: float = 1.0

@@ -163,4 +163,7 @@ func validate() -> bool:
 	if not (flight.has("unlock") and flight.has("stat") and flight.has("value") and flight.has("line")):
 		push_error("ContentDB: bad flight entry")
 		return false
+	if not realms.is_empty() and (int(flight.get("value", -1)) < 0 or int(flight.get("value", -1)) >= realms.size()):
+		push_error("ContentDB: flight unlock realm outside the ladder")
+		return false
 	return true

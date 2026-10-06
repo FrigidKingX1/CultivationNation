@@ -34,14 +34,15 @@ $P = "E:\ClaudeATHome\Projects\Cultivation Nation"
 & $E --headless --path $P -s "res://tests/p15_test.gd"              # depth (64)
 & $E --headless --path $P -s "res://tests/p16_test.gd"              # reliability (12)
 & $E --headless --path $P -s "res://tests/p17_test.gd"              # interface (83)
-& $E --headless --path $P -s "res://tests/p21_test.gd"              # adopted systems (66)
+& $E --headless --path $P -s "res://tests/p21_test.gd"              # adopted systems (68)
 & $E --headless --path $P -s "res://tests/guardians_test.gd"         # wardens/duels (79)
 & $E --headless --path $P -s "res://tests/save_v12_migration_test.gd" # save v12 (9)
 & $E --headless --path $P -s "res://tests/p23_world_test.gd"          # island world (24)
+& $E --headless --path $P -s "res://tests/p24_presence_test.gd"       # avatar/presence (59)
 & $E --headless --path $P -s "res://tests/soak_test.gd"             # 210y soak (exit code)
 & $E --path "E:\Godot Game Engine\Godot_v4.6.3-stable_win64.exe\Godot_v4.6.3-stable_win64.exe" --path $P  # play
 ```
-26 suites, 1075 counted checks (soak passes by exit code). Ground truth
+27 suites, 1136 counted checks at 0.23.0 (soak passes by exit code). Ground truth
 per release: `docs/qa/p22/sweep_summary.csv`.
 
 ## Loop
@@ -94,6 +95,9 @@ Hybrid number formatting to 1e51.
   crossing). Deterministic N-wave duels on the tribulation-power scale;
   proportional defeat costs, first-win rewards, victories persist rebirth
   and ascension. Roster + Challenge buttons live in the Beasts tab.
+- Avatar presence (P24): walkable cultivator on the active island (WASD,
+  19 rebindable actions; wander default V), follow camera, meditate at map
+  nodes for x1.5 Qi, sword-flight from Nascent Soul, avatar-side zone walls.
 - Procedural sound (synthesized chimes, zero assets, mute + volume slider)
 
 ## Interface (P17 overhaul, P19c modernization, P21 adoption)
