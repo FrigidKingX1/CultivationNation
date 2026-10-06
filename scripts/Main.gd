@@ -1579,6 +1579,7 @@ const SHORTCUTS := [
 	["E", "Interact / meditate at touched points"],
 	["F", "Toggle sword-flight (once unlocked)"],
 	["Right mouse", "Strike in the arena (P25)"],
+	["Rebinds", "Rebinding a key moves it — one key, one action (Settings)"],
 ]
 
 func _tip(path: String, text: String) -> void:

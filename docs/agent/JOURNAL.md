@@ -27,3 +27,8 @@ what changed, what was learned. Evidence over narrative.
 ## 2026-10-06 — 0.28b armor (no tuning)
 - Pin test mirrors pacing.gd line-for-line (seed 4242, same policy) + duel accounting. Maiden: (73038, 13), 7 duels, 0 duel-ticks. Red demo via temp copy with 73039: exactly one FAIL on the pin line; merged file never touched.
 - Warden budget truth: duels resolve instantly (zero _step_tick inside); the P2 assertion guards future refactors that charge ticks, and pins one-duel-per-tier.
+
+## 2026-10-06 — veil phantom RESOLVED (mechanism found, watch item closed)
+- The Attuning... + dark world in probe captures = TWO fade windows, not a stuck veil: (1) boot veil auto-hides at frame 45 + 0.25s fade — snaps at global frames 41-81 catch the tail; (2) modal blur backdrop from milestone AcceptDialogs (_hide_all hid the dialog, backdrop fades after). Same-run parchment snap +20 frames later is clean every time. Untampered boot (G2 s0 at frame 44) shows the veil mid-fade NORMALLY.
+- Proof it is timing, not state: veil flag read hidden at all probed frames; zero Label3Ds; UI-hidden capture shows the bright world (veil is UI-layer); s0 shows the veil legitimately mid-fade. No code change. 1.0-G2 watch item: DOWNGRADED to capture-hygiene (snap after fade windows), no blocker path.
+- G2 friction finding (real, cosmetic): breakthrough banners overlap illegibly at 1000x (two Radiant banners mashed center-screen). Candidate 1.0b defect: banner queue/coalesce. Only manifests at high time_scale.

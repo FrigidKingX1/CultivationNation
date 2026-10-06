@@ -3,8 +3,10 @@
 # (P13: Web target dropped; Windows only.)
 
 $ErrorActionPreference = "Stop"
-$Engine = "E:\Godot Game Engine\Godot_v4.6.3-stable_win64.exe\Godot_v4.6.3-stable_win64_console.exe"
-$Project = "E:\ClaudeATHome\Projects\Cultivation Nation"
+# F5(1.0a): no hardcoded machine paths — engine via GODOT_CONSOLE env with
+# pinned-default fallback; project derived from this script's location.
+$Engine = if ($env:GODOT_CONSOLE) { $env:GODOT_CONSOLE } else { "E:\Godot Game Engine\Godot_v4.6.3-stable_win64.exe\Godot_v4.6.3-stable_win64_console.exe" }
+$Project = (Resolve-Path (Join-Path $PSScriptRoot "..")).Path
 $Mode = "gate"
 if ($args.Count -ge 1) { $Mode = $args[0] }
 

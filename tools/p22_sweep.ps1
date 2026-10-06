@@ -1,7 +1,7 @@
 # P22 verification sweep. Exit codes authoritative; PASS counts recorded for log diff.
 # NEVER run p22_soak_save (or any soak mode) concurrently with this sweep.
-$enginePath = "E:\Godot Game Engine\Godot_v4.6.3-stable_win64.exe\Godot_v4.6.3-stable_win64_console.exe"
-$projectPath = "E:\ClaudeATHome\Projects\Cultivation Nation"
+$enginePath = if ($env:GODOT_CONSOLE) { $env:GODOT_CONSOLE } else { "E:\Godot Game Engine\Godot_v4.6.3-stable_win64.exe\Godot_v4.6.3-stable_win64_console.exe" }
+$projectPath = (Resolve-Path (Join-Path $PSScriptRoot "..")).Path
 $outDir = Join-Path $projectPath "docs\qa\p22"
 New-Item -ItemType Directory -Force -Path $outDir | Out-Null
 

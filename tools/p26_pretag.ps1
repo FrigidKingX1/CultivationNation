@@ -1,5 +1,5 @@
 # Pre-tag verification. READ-ONLY. Run before tag + push.
-$projectPath = "E:\ClaudeATHome\Projects\Cultivation Nation"
+$projectPath = (Resolve-Path (Join-Path $PSScriptRoot "..")).Path
 Set-Location $projectPath
 
 Write-Host "== V1: HEAD / tree / ledger commit shape =="
