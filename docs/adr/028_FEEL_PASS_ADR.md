@@ -25,6 +25,44 @@ budget · pacing curve itself (the sunset).
 
 No new features. No new systems. Tuning constants + the decision record.
 
+## Amendment 2 — SUNSET DECISION: SHIP THE CURVE (final, Q58/Q59 ratified)
+Decided on measured band data; owner ratified conditionality at Q56
+(rebalance only if the journal said so); journal declined; condition
+never fired. The only forbidden outcome was tuning without data —
+this decision is the alternative, not a violation.
+
+### Evidence of record (all previously measured, cited)
+- Default ladder: 73038/13 — pinned (EXPECTED_PACING),
+  mechanism-enforced.
+- Presence premium: 71,704/12 — sub-linear by design (walls are
+  readiness/power-bound); opt-in, own bands.
+- Ley-line at FULL attunement (open=8, x1.64): 72,844/13 — −0.27%.
+  Near-flat is a STRUCTURAL property of a wall-bound ladder, not a
+  tuning defect. "Fixing" it means redesigning walls = post-1.0
+  decision, not a feel pass.
+- Stakes: selective-HC nets 72,984/13 (−54); greedy stall is policy
+  failure; switching-bot clears. Design intent confirmed in
+  play-scale data.
+- Wardens: 0 duel-ticks (O(1) ceremony) — "tax" is zero by
+  architecture.
+- Arena: manual-only, opt-in, bonus bounded by hunt/respawn rules;
+  no defect signal in any band.
+
+### Dispositions
+- U-ledger (d) pacing feel: resolved by DECISION on data, not by play
+  experience — recorded as such so 1.0 does not overclaim.
+- Clarity levers (P5): remain available post-1.0 if the owner ever
+  reports confusion; no evidence-driven wording changes now.
+- P4 rebalance runbook: STAYS ARMED. Any future retune executes it:
+  journal-justified, signed-off, one commit, EXPECTED_PACING re-anchored,
+  bands re-derived, tripwires kept.
+- Bit-identity era closes having never been broken: six prose
+  verifications, one mechanism, zero violations.
+
+### Release disposition
+No 0.28.0 release: the decision rides as docs into 1.0.0 readiness.
+Version train: 0.27.0 → 1.0.0 (readiness phases 1.0a/b/c per R-S19).
+
 ## Amendment 1 — 0.28a tree-truth pins (auditor-signed)
 Tree sources: LEYLINE_STEP_MULT:125, DEN_ACCEPT_RATIO:740,
 TEMPERED_RADIANT_FILL:1577, TEMPO_CLAMP_TPS:703, BONUS_TEMPO_FRAC:704,
