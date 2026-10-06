@@ -489,6 +489,54 @@ func avatar_near_node() -> String:
 			return str(m.get_meta("node_id", ""))
 	return ""
 
+var _shrine_request: String = ""
+var _challenge_beast: String = ""
+
+func avatar_den_near() -> String:
+	## Beast den (marker) within interaction radius, else "".
+	if _cultivator == null or _beast_row == null:
+		return ""
+	for m in _beast_row.get_children():
+		if not (m as Node3D).visible:
+			continue
+		var mp: Vector3 = (m as Node3D).global_position
+		var ap: Vector3 = _cultivator.global_position
+		if Vector2(mp.x - ap.x, mp.z - ap.z).length() <= INTERACT_RADIUS:
+			return str(m.get_meta("beast_id", ""))
+	return ""
+
+func avatar_shrine_near() -> String:
+	## Guardian id whose flame stands within interaction radius, else "".
+	## Shrines live on resident islands; only the active neighborhood
+	## is reachable, which is exactly the design.
+	if _cultivator == null:
+		return ""
+	var ap: Vector3 = _cultivator.global_position
+	for iz in _island_order:
+		var n: Node = _islands.get(str(iz)) as Node
+		if n == null:
+			continue
+		for fname in ["ShrineFlame", "SentinelFlame"]:
+			var f: MeshInstance3D = n.get_node_or_null(fname) as MeshInstance3D
+			if f == null:
+				continue
+			var fp: Vector3 = f.global_position
+			if Vector2(fp.x - ap.x, fp.z - ap.z).length() <= INTERACT_RADIUS:
+				return str(f.get_meta("guardian_id", ""))
+	return ""
+
+func take_shrine_request() -> String:
+	## One-shot consume for Main's poll: interact at a shrine queues the
+	## tier's guardian; Main opens the EXISTING duel flow for it.
+	var out: String = _shrine_request
+	_shrine_request = ""
+	return out
+
+func avatar_challenge() -> String:
+	## Beast id currently challenged ("" when none). P25a: entry state
+	## only — the exchange loop lands in P25b.
+	return _challenge_beast
+
 func _engine_running() -> bool:
 	var ge := _engine()
 	if ge == null:
@@ -525,10 +573,56 @@ func _poll_avatar(dt: float) -> void:
 		avatar_move(dir.normalized() if dir.length() > 1.0 else dir, dt)
 		return
 	if Input.is_action_pressed("world_interact"):
-		_try_meditate()
+		_try_interact()
 		return
 	if _avatar_state == "walk":
 		_avatar_state = "idle"
+
+func _try_interact() -> void:
+	## P25a: interact routing — den first, then shrine, then node.
+	## Dens challenge (or refuse warded-style below strength); shrines
+	## queue their guardian for Main's duel flow; nodes meditate.
+	## The fight exchange loop itself lands in P25b.
+	var ge := _engine()
+	if ge == null or not _engine_running():
+		return
+	if _avatar_state == "fly":
+		return
+	var den: String = avatar_den_near()
+	if den != "":
+		_try_den(den)
+		return
+	var shrine: String = avatar_shrine_near()
+	if shrine != "":
+		_shrine_request = shrine
+		_avatar_state = "idle"
+		return
+	_try_meditate()
+
+func _try_den(beast_id: String) -> void:
+	## P25a: den challenge entry. Below-strength beasts refuse warded-style
+	## (same hunt_yield_mult rule the stalk path reads — R13, no duplicate
+	## logic). Accepted challenges stage the beast id; the exchange loop
+	## lands in P25b. Main voices both outcomes via take_den_outcome().
+	_challenge_beast = ""
+	var ge := _engine()
+	if ge == null or str(beast_id) == "":
+		return
+	if float(ge.call("hunt_yield_mult", str(beast_id))) < 1.0:
+		_den_outcome = {"beast": str(beast_id), "accepted": false}
+		_avatar_state = "idle"
+		return
+	_challenge_beast = str(beast_id)
+	_den_outcome = {"beast": str(beast_id), "accepted": true}
+	_avatar_state = "idle"
+
+var _den_outcome: Dictionary = {}
+
+func take_den_outcome() -> Dictionary:
+	## One-shot consume for Main's poll: voices challenge entry + refusal.
+	var out: Dictionary = _den_outcome
+	_den_outcome = {}
+	return out
 
 func _break_meditation() -> void:
 	if _avatar_state == "meditate":
@@ -859,6 +953,8 @@ func _build_shrine(root: Node3D, zone: String, r: float, amp: float) -> void:
 		flame.mesh = fm
 		flame.material_override = _unshaded(Color(1.0, 0.8, 0.35), 2.5)
 		flame.position = Vector3(r * 0.4, top + 4.0, -r * 0.3)
+		# P25a: shrine flames carry their warden (tier by island order).
+		flame.set_meta("guardian_id", "guardian_%02d" % (WARDEN_ISLES.find(zone) + 1))
 		root.add_child(flame)
 	if zone == "Thornwake":
 		var sent := MeshInstance3D.new()
@@ -877,6 +973,8 @@ func _build_shrine(root: Node3D, zone: String, r: float, amp: float) -> void:
 		sflame.mesh = sm
 		sflame.material_override = _unshaded(Color(1.0, 1.0, 0.95), 3.0)
 		sflame.position = Vector3(r * 0.4 + 2.2, top + 5.4, -r * 0.3)
+		# P25a: the tier-7 sentinel watches from the ladder's end.
+		sflame.set_meta("guardian_id", "guardian_07")
 		root.add_child(sflame)
 
 func _pal_color(pal: Dictionary, key: String, fallback: Color) -> Color:
@@ -1127,6 +1225,9 @@ func _rebuild_beasts(zone: String) -> void:
 		spr.position = Vector3(cos(a) * d, 1.0, sin(a) * d)
 		spr.set_meta("base_y", 1.0)
 		spr.set_meta("phase", float(shown) * 1.1)
+		# P25a: dens are markers elevated to interactable (Q36). The beast
+		# id rides metadata; the fight loop lands in P25b.
+		spr.set_meta("beast_id", str((b as Dictionary).get("id", "")))
 		_beast_row.add_child(spr)
 		shown += 1
 

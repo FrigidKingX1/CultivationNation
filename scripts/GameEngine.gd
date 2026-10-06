@@ -1497,6 +1497,33 @@ func hunt_yield_mult(beast_id: String) -> float:
 		return 0.75
 	return 0.5
 
+# P25a skirmish scales (R-S7): every constant names its scale. These feed
+# the manual fight loop (P25b); the values below are v1 tuning inputs,
+# recorded in DECISIONS, re-measurable — never silent math.
+const SKIRMISH_REACH := 6.0
+const SKIRMISH_BEAST_CADENCE := 4
+const SKIRMISH_HP_BASE := 100.0
+const SKIRMISH_TEMPO_MIN := 0.4
+
+func skirmish_stats(beast_id: String) -> Dictionary:
+	## P25a: read-only additive getter for the manual arena. Pure function
+	## of current stats; writes nothing, needs no save keys. Returns {} with
+	## ok=false for unknown beasts.
+	var bpower: float = float(_beast_def(beast_id).get("power", 0.0))
+	if bpower <= 0.0:
+		return {"ok": false}
+	var art: float = artifact_power_bonus()
+	var tech: float = technique_power_bonus(focus_technique) if focus_technique != "" else 1.0
+	return {
+		"ok": true,
+		"beast_power": bpower,
+		"cult_dmg": (10.0 + art) * maxf(tech, 1.0),
+		"beast_cadence_ticks": SKIRMISH_BEAST_CADENCE,
+		"player_hp": SKIRMISH_HP_BASE * (1.0 + 0.25 * float(total_rebirths)),
+		"reach": SKIRMISH_REACH,
+		"tempo_min": SKIRMISH_TEMPO_MIN,
+	}
+
 func hunt_at(id: String, kills: int = 1) -> int:
 	var n: Dictionary = node_by_id(id)
 	if n.is_empty():

@@ -34,8 +34,15 @@ func avatar_move(dir: Vector2, dt: float = 0.016) -> void:
 func set_avatar_flying(on: bool) -> void:
 func avatar_lock_reason() -> String:
 func avatar_near_node() -> String:
+func avatar_den_near() -> String:
+func avatar_shrine_near() -> String:
+func take_shrine_request() -> String:
+func avatar_challenge() -> String:
 func _engine_running() -> bool:
 func _poll_avatar(dt: float) -> void:
+func _try_interact() -> void:
+func _try_den(beast_id: String) -> void:
+func take_den_outcome() -> Dictionary:
 func _break_meditation() -> void:
 func _try_meditate() -> void:
 func _update_follow() -> void:

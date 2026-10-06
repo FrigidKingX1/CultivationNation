@@ -484,7 +484,26 @@ const INPUT_DEFAULTS := {
 	"world_move_forward": [KEY_W], "world_move_back": [KEY_S],
 	"world_move_left": [KEY_A], "world_move_right": [KEY_D],
 	"world_interact": [KEY_E], "world_toggle_flight": [KEY_F],
+	# P25a: 19 -> 20. Attack defaults to the RIGHT mouse button: LEFT is
+	# the orbit-drag button, so LEFT cannot cleanly attack without a
+	# click-vs-drag disambiguator that would cheapen both feels.
+	# "MOUSE_*" specs build InputEventMouseButton (below); ints build keys.
+	"world_attack": ["MOUSE_RIGHT"],
 }
+
+func _default_event(spec: Variant) -> InputEvent:
+	if str(spec).begins_with("MOUSE_"):
+		var mb := InputEventMouseButton.new()
+		if str(spec) == "MOUSE_LEFT":
+			mb.button_index = MOUSE_BUTTON_LEFT
+		elif str(spec) == "MOUSE_MIDDLE":
+			mb.button_index = MOUSE_BUTTON_MIDDLE
+		else:
+			mb.button_index = MOUSE_BUTTON_RIGHT
+		return mb
+	var ev := InputEventKey.new()
+	ev.physical_keycode = int(spec)
+	return ev
 
 func _register_input_actions() -> void:
 	for action in INPUT_DEFAULTS:
@@ -496,10 +515,8 @@ func _register_input_actions() -> void:
 		if not saved.is_empty():
 			events = saved
 		else:
-			for key in (INPUT_DEFAULTS[action] as Array):
-				var ev := InputEventKey.new()
-				ev.physical_keycode = key
-				events.append(ev)
+			for spec in (INPUT_DEFAULTS[action] as Array):
+				events.append(_default_event(spec))
 		for ev in events:
 			if ev is InputEvent:
 				InputMap.action_add_event(str(action), ev)
@@ -516,10 +533,8 @@ func _seed_input_defaults() -> void:
 	AppSettings.default_action_events.clear()
 	for action in INPUT_DEFAULTS:
 		var defaults: Array[InputEvent] = []
-		for key in (INPUT_DEFAULTS[action] as Array):
-			var ev := InputEventKey.new()
-			ev.physical_keycode = key
-			defaults.append(ev)
+		for spec in (INPUT_DEFAULTS[action] as Array):
+			defaults.append(_default_event(spec))
 		AppSettings.default_action_events[StringName(str(action))] = defaults
 
 func _wire_advanced_options() -> void:
@@ -1561,6 +1576,7 @@ const SHORTCUTS := [
 	["W A S D", "Walk the world (panels closed)"],
 	["E", "Interact / meditate at touched points"],
 	["F", "Toggle sword-flight (once unlocked)"],
+	["Right mouse", "Strike in the arena (P25)"],
 ]
 
 func _tip(path: String, text: String) -> void:
@@ -1807,6 +1823,7 @@ func _process(delta: float) -> void:
 		_ui_timer = 0.0
 		_refresh_ui()
 		_refresh_stride_note()
+		_refresh_shrine_den()
 		_refresh_breakthrough_btn()
 		_refresh_pills_if_stale()
 		_refresh_attune_if_stale()
@@ -1899,6 +1916,29 @@ func _refresh_stride_note() -> void:
 		_stride_note = reason
 		_log(reason + " Walk them when admitted.", "warn")
 		_sfx("fail")
+
+func _refresh_shrine_den() -> void:
+	## P25a: voices shrine + den interactions queued by the world view.
+	## Shrines open the EXISTING guardian duel flow; dens stage their
+	## challenge (refusals name the gap, warded-style). The fight exchange
+	## loop lands in P25b.
+	var world: Node = get_node_or_null("WorldViewport/World")
+	if world == null:
+		return
+	if world.has_method("take_shrine_request"):
+		var gid: String = str(world.call("take_shrine_request"))
+		if gid != "":
+			_on_guardian(gid)
+	if world.has_method("take_den_outcome"):
+		var res: Dictionary = world.call("take_den_outcome")
+		if not res.is_empty():
+			if bool(res.get("accepted", false)):
+				_log("The beast bares its fangs. Hold your ground.", "realm")
+				_toast("Challenged", "realm")
+				_sfx("click")
+			else:
+				_log("Outmatched on those grounds — signs would halve. Drill first.", "warn")
+				_sfx("fail")
 
 func _refresh_coach() -> void:
 	## P21: first-session coach marks (godot-idle skeleton fitted to our

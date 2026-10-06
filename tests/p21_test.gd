@@ -330,23 +330,26 @@ func _test_settings_input() -> void:
 	fresh.pressed = true
 	_scene_main.call("_unhandled_key_input", fresh)
 	_check(str(ge2.get("player_focus")) == "cultivate", "rebound key fires")
-	_check(int(AppSettings.default_action_events.size()) == 19, "vendor reset snapshot seeded")
+	_check(int(AppSettings.default_action_events.size()) == 20, "vendor reset snapshot seeded")
 	AppSettings.reset_to_default_inputs()
 	var after_reset: Array = InputMap.action_get_events("cult_breathe")
 	_check(after_reset.size() == 1 and int((after_reset[0] as InputEventKey).physical_keycode) == KEY_1, "vendor reset restores defaults")
-	# P24 rule-11: 13 -> 19 actions; WASD movement needs unambiguous keys,
-	# so every default keycode must be distinct (wander moved W -> V).
+	# P25 rule-11: 19 -> 20 actions. The machine proof compares (type,
+	# code) pairs — mouse-button events carry keycode NONE and must not
+	# false-collide with keys (world_attack defaults to RIGHT mouse).
 	var seen: Dictionary = {}
 	var dup: bool = false
-	for action in ["cult_breathe", "cult_drill", "cult_stalk", "cult_tribulation", "cult_speed1", "cult_speed10", "cult_speed100", "cult_speed1000", "cult_pause", "cult_hunt", "cult_wander", "cult_mute", "cult_help", "world_move_forward", "world_move_back", "world_move_left", "world_move_right", "world_interact", "world_toggle_flight"]:
+	for action in ["cult_breathe", "cult_drill", "cult_stalk", "cult_tribulation", "cult_speed1", "cult_speed10", "cult_speed100", "cult_speed1000", "cult_pause", "cult_hunt", "cult_wander", "cult_mute", "cult_help", "world_move_forward", "world_move_back", "world_move_left", "world_move_right", "world_interact", "world_toggle_flight", "world_attack"]:
 		for e in InputMap.action_get_events(str(action)):
-			var k: int = int((e as InputEventKey).physical_keycode)
-			if seen.has(k):
+			var tag: String = "key:" + str((e as InputEventKey).physical_keycode) if e is InputEventKey else ("mouse:" + str((e as InputEventMouseButton).button_index) if e is InputEventMouseButton else "other")
+			if seen.has(tag):
 				dup = true
-			seen[k] = true
-	_check(not dup and seen.size() == 19, "19 actions, collision-free defaults")
+			seen[tag] = true
+	_check(not dup and seen.size() == 20, "20 actions, collision-free defaults")
 	var wevs: Array = InputMap.action_get_events("cult_wander")
 	_check(wevs.size() == 1 and int((wevs[0] as InputEventKey).physical_keycode) == KEY_V, "wander default is V")
+	var aevs: Array = InputMap.action_get_events("world_attack")
+	_check(aevs.size() == 1 and (aevs[0] is InputEventMouseButton) and int((aevs[0] as InputEventMouseButton).button_index) == MOUSE_BUTTON_RIGHT, "attack defaults to right mouse")
 	AppSettings.set_config_input_events("cult_breathe", [])
 	_scene_main.call("_register_input_actions")
 	# Options scenes instantiate (vendor UI gated from headless tree entry).
@@ -361,6 +364,15 @@ func _test_settings_input() -> void:
 	# the content boundary and the whole control goes blank).
 	var vol: HSlider = _scene_main.get_node("UI/Root/SidePanel/PanelScroll/PanelTabs/Settings/VolumeSlider") as HSlider
 	_check(vol.custom_minimum_size.x <= 340.0 and vol.size_flags_horizontal == Control.SIZE_SHRINK_CENTER, "sliders fit inside the panel")
+	# P25 rule-11: the rebind list height scales with the action count
+	# (Round 1 defect #5 guard: max(320, 24xN) — 480px for 20 actions).
+	var mockroot := VBoxContainer.new()
+	var mocklist := ScrollContainer.new()
+	mocklist.name = "InputActionsList"
+	mockroot.add_child(mocklist)
+	_scene_main.call("_give_list_height", mockroot)
+	_check((mocklist as ScrollContainer).custom_minimum_size == Vector2(0, 480), "rebind list claims N-scaled height")
+	mockroot.queue_free()
 
 func _test_coach_veil_skin() -> void:
 	var ge: Node = root.get_node("GameEngine")
