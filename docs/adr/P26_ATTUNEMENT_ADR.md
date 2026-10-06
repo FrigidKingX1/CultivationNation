@@ -7,12 +7,16 @@ R-S7/R-S8/R-S11/R-S12/R-S13/R-S16/R-S19.
 ## Scope lock
 - Engine touch class: rate factor #4 (karma, presence, heaven_mark, now
   attunement) — ONE documented multiplicative factor on the compiled
-  qi-rate scale, rule-5 compliant. Branch-guarded: `if open > 0:
-  raw *= attunement_mult` (P24b pattern — default path byte-untouched).
-  Factor insertion point in the composed chain pinned at 0.26a (order
-  is irrelevant when inactive — ×1.0 is IEEE-exact — and pinned for
-  active determinism).
-- Save: v13 → v14. ONE field: `attunement_open: 0` (sequential channels
+  qi-rate scale, rule-5 compliant. Branch-guarded: `if leyline_open > 0:
+  raw *= leyline_mult` (P24b pattern — default path byte-untouched).
+  Naming (0.26a finding): `attunement` is TAKEN (P15 per-art drill dict +
+  attunement_of + save key) — the meridian count uses the `leyline_`
+  prefix throughout (`leyline_open`, `leyline_mult()`,
+  `LEYLINE_STEP_MULT`, `data/leylines.json`, `p27_leylines_test.gd`).
+  Insertion point pinned (0.26a): scripts/GameEngine.gd `_recompute_rate`
+  after the heaven-marks branch (L317-318), before the finite guard
+  (L319) — order irrelevant when inactive (x1.0 IEEE-exact).
+- Save: v13 → v14. ONE field: `leyline_open: 0` (sequential channels
   make a count sufficient). Chained defaults-only migration; never v2.
 - Persistence class (R-S11, stated): WORLD-CLASS — cleared on Samsara
   and ascension, same class as gear/techniques. NOT soul-class: karma/
@@ -32,13 +36,13 @@ R-S7/R-S8/R-S11/R-S12/R-S13/R-S16/R-S19.
   discipline; never hand-edited): per-channel cost curve + realm floor.
   ContentDB validation: unknown fields reject; exactly 8 channels;
   sequence immutable; floors in realm range; costs positive + monotonic.
-- Benefit: attunement_mult = 1 + attunement_step_mult × open_count
+- Benefit: leyline_mult = 1 + LEYLINE_STEP_MULT × leyline_open
   (default step 0.08 → full ×1.64; Q45). Linear in count — simple bands,
   natural cap.
 - Access: world_interact at a meditation node → modal (attune next /
   meditate / cancel) when the next channel's realm floor is met and qi
   covers the cost. Refusals warded-style, naming the gap (floor or qi).
-- Reset semantics: Samsara/ascension → attunement_open = 0 (world-reset
+- Reset semantics: Samsara/ascension → leyline_open = 0 (world-reset
   path); apply_state LOADS it (saved state — opposite of presence).
 
 ## Phases (release-qualified per R-S19)
@@ -56,10 +60,21 @@ R-S7/R-S8/R-S11/R-S12/R-S13/R-S16/R-S19.
   (R-S16); tag + push [CONFIRM ×2].
 
 ## Tests
-- NEW p27_attunement_test.gd (30th; runner +1): sequential enforcement;
+- NEW p27_leylines_test.gd (30th; runner +1): sequential enforcement;
   floor gating + warded refusals; cost curve; factor math
-  (rate × (1 + step×n)); reset on Samsara/ascension; LOADED on
+  (rate × (1 + step×n));   reset on Samsara/ascension; LOADED on
   apply_state; offline inclusion; orthogonality (composes with presence/
   heaven_mark/stakes, no interaction); default bit-identical pacing;
   v14 migration chained defaults-only; node flow; budgets; viewport pinned.
+- 0.26a cost calibration (verified against data/realms.json qi_required;
+  agent-proposed bases for R08/R16 corrected): floors/costs —
+  ch1 R02 2,000 (req 4,260) · ch2 R05 80,000 (req 168,960) ·
+  ch3 R08 2,000,000 (req 4,177,920) · ch4 R12 240,000,000 (req
+  503,316,480) · ch5 R16 60,000,000,000 (req 128,849,018,880) ·
+  ch6 R20 8,000,000,000,000 (req 32,985,348,833,280) ·
+  ch7 R23 500,000,000,000,000 (req 2,111,062,325,329,920) ·
+  ch8 R25 8,000,000,000,000,000 (req 33,776,997,205,278,720).
+  Early channels ~0.5× floor requirement (affordable first-life);
+  late channels ~0.24× (mid-game sink, purchasable within tens of
+  floor-rate ticks).
 - All 29 suites retained; touched assertions rule-11 cited (R-S12).
