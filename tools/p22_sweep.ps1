@@ -17,7 +17,7 @@ $suites = @(
   "p11_test.gd","p12_test.gd","p13_test.gd","p14_test.gd","p15_test.gd",
   "p16_test.gd","p17_test.gd","p21_test.gd","soak_test.gd",
   "guardians_test.gd","save_v12_migration_test.gd","p23_world_test.gd",
-  "p24_presence_test.gd","p25_arena_test.gd","p26_stakes_test.gd","p27_leyline_test.gd","p28_worldui_test.gd"
+  "p24_presence_test.gd","p25_arena_test.gd","p26_stakes_test.gd","p27_leyline_test.gd","p28_worldui_test.gd","pacing_pin_test.gd"
 )
 $results = @()
 foreach ($suite in $suites) {

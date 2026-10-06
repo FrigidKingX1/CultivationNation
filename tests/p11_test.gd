@@ -94,8 +94,9 @@ func _test_pacing() -> void:
 			t3 = ticks
 	_check(int(ge.get("realm_index")) >= 50, "pacing: full clear within cap")
 	_check(fails == 0, "pacing: no doomed attempts fired")
-	# P16-Step2 lower bounds (P18 re-measured 73066/13 after the
-	# front-load: slow start, untouched late): tripwires against silent
+	# P16-Step2 lower bounds (exact pin now lives in pacing_pin_test.gd
+	# EXPECTED_PACING, re-measured 73038/13 after the M2-M5 wardens: slow
+	# start, untouched late): tripwires against silent
 	# trivialization. A future change that halves the clear must trip these
 	# and justify itself in DECISIONS.md, not slide by unnoticed.
 	_check(ticks >= 30000, "pacing: clear takes real journeys (ticks floor)")
