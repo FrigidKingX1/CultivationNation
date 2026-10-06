@@ -1,0 +1,43 @@
+# Continuous watch (NOT the release gate): gate + FAST_SUITES on every
+# push to main. The full 32-suite sweep stays the local release gate;
+# bench/soak are excluded — shared runners cannot honor R-S19 idle-iron.
+# The pacing pin test runs on every push (bit-identity goes public).
+# Engine: pinned 4.6.3 console binary, fetched per run. The asset name
+# follows the verified local distribution
+# (Godot_v4.6.3-stable_win64.exe.zip ships the console exe alongside);
+# the fetch step fails loudly if the console binary is absent.
+name: gate
+on:
+  push:
+    branches: [main]
+  pull_request:
+jobs:
+  fast:
+    runs-on: windows-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Fetch pinned Godot console binary
+        shell: pwsh
+        run: |
+          $zip = "$env:RUNNER_TEMP\godot.zip"
+          Invoke-WebRequest -Uri "https://github.com/godotengine/godot/releases/download/4.6.3-stable/Godot_v4.6.3-stable_win64.exe.zip" -OutFile $zip
+          Expand-Archive $zip -DestinationPath "$env:RUNNER_TEMP\godot"
+          $con = Get-ChildItem -Path "$env:RUNNER_TEMP\godot" -Filter "*console*" -Recurse | Select-Object -First 1
+          if ($null -eq $con) { Write-Host "console binary missing from asset"; exit 1 }
+          echo "GODOT_CONSOLE=$($con.FullName)" >> $env:GITHUB_ENV
+      - name: Import
+        shell: pwsh
+        run: "& $env:GODOT_CONSOLE --headless --path ${{ github.workspace }} --import"
+      - name: Gate loads clean
+        shell: pwsh
+        run: "& $env:GODOT_CONSOLE --headless --path ${{ github.workspace }} --quit"
+      - name: FAST_SUITES
+        shell: pwsh
+        run: |
+          $fail = 0
+          foreach ($s in @("self_test.gd", "bignum_test.gd", "save_robustness_test.gd", "pacing_pin_test.gd")) {
+            & $env:GODOT_CONSOLE --headless --path ${{ github.workspace }} -s ("res://tests/" + $s)
+            if ($LASTEXITCODE -ne 0) { Write-Host "FAIL: $s"; $fail += 1 }
+          }
+          if ($fail -ne 0) { Write-Host "FAST_SUITES FAIL: $fail"; exit 1 }
+          Write-Host "FAST_SUITES PASS"
