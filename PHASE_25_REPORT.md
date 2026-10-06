@@ -93,9 +93,9 @@ weaken the wire — manual-opt-in is opt-in with its own recorded bands.
 
 ## PCK note
 
-0.23.0 PCK: 12,628,840 bytes. 0.24.0 PCK: 12,639,872 bytes (delta
-+11,032 — arena code, den metadata, one suite; negligible). Evidence
-stays committed; docs/* remains excluded. Exe+pck+dll verified together.
+0.23.0 PCK: 12,628,840 bytes. 0.24.0 PCK: 12,639,872 bytes (release
+delta +8,736; cumulative since docs-exclusion +11,032). Evidence stays
+committed; docs/* remains excluded. Exe+pck+dll verified together.
 
 ## 0.25.0 theme recommendation
 
