@@ -687,10 +687,14 @@ func avatar_fight(beast_id: String) -> Dictionary:
 func avatar_strike(at_msec: int = -1) -> Dictionary:
 	## One player attack. Tempo clamp (min interval), range check, then
 	## exactly ONE combat tick: both sides deal simultaneously, cultivator
-	## first (a killing blow lands before the answer). Returns the tick
-	## result; resolution sets take_fight_outcome() for Main's poll.
+	## first (a killing blow lands before the answer). Panels open suspend
+	## the fight outright (panel-freeze: gated clock + input gating +
+	## this suspension — opening a panel mid-fight changes zero HP).
+	## Returns the tick result; resolution sets take_fight_outcome().
 	if str(avatar_fight_state()) != "fighting":
 		return {"ok": false, "reason": "not_fighting"}
+	if _ui_open():
+		return {"ok": false, "reason": "suspended"}
 	var now: int = at_msec if at_msec >= 0 else int(Time.get_ticks_msec())
 	var last: int = int(_fight.get("last_msec", -1))
 	var min_gap: int = int(1000.0 / TEMPO_CLAMP_TPS)

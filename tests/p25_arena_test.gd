@@ -46,6 +46,7 @@ func _process(_delta: float) -> bool:
 		_test_invariance()
 		_test_loss()
 		_test_tempo_clamp()
+		_test_panel_freeze()
 		_test_budgets()
 		if _failures == 0:
 			print("P25-TEST PASS")
@@ -303,4 +304,28 @@ func _test_tempo_clamp() -> void:
 	_check(not bool(r2.get("ok", true)) and str(r2.get("reason", "")) == "tempo", "mash inside the clamp rejected")
 	w.call("avatar_strike", 1001000)
 	w.call("avatar_strike", 1002000)
+	w.call("take_fight_outcome")
+
+func _test_panel_freeze() -> void:
+	# Panel-freeze: opening panels mid-fight suspends combat — gated clock
+	# plus input gating plus strike suspension means zero HP change on
+	# both sides. Intended idle-game UX (manage the sect mid-hunt).
+	# Opens its OWN fight: piggybacking a previous test's leftover state
+	# would pass vacuously (caught by check-count audit).
+	var w: Node = _world()
+	var ge: Node = root.get_node("GameEngine")
+	ge.set("realm_index", 0)
+	_fight_at(w, "Dewfield")
+	_check(str(w.call("avatar_fight_state")) == "fighting", "freeze probe fight open")
+	w.call("avatar_strike", 1000000)
+	# Snapshot by value: Dictionaries ride by reference, so duplicate.
+	var f0: Dictionary = (w.get("_fight") as Dictionary).duplicate()
+	(_scene_main.get_node("UI/Root/SidePanel") as Control).visible = true
+	var r: Dictionary = w.call("avatar_strike", 1001000)
+	_check(not bool(r.get("ok", true)) and str(r.get("reason", "")) == "suspended", "open panels suspend strikes")
+	var f1: Dictionary = w.get("_fight")
+	_check(float(f1.get("beast_hp", -1.0)) == float(f0.get("beast_hp", -2.0)) and float(f1.get("self_hp", -1.0)) == float(f0.get("self_hp", -2.0)), "suspended fight changes zero HP")
+	(_scene_main.get_node("UI/Root/SidePanel") as Control).visible = false
+	w.call("avatar_strike", 1002000)
+	w.call("avatar_strike", 1003000)
 	w.call("take_fight_outcome")

@@ -39,10 +39,11 @@ $P = "E:\ClaudeATHome\Projects\Cultivation Nation"
 & $E --headless --path $P -s "res://tests/save_v12_migration_test.gd" # save v12 (9)
 & $E --headless --path $P -s "res://tests/p23_world_test.gd"          # island world (24)
 & $E --headless --path $P -s "res://tests/p24_presence_test.gd"       # avatar/presence (59)
+& $E --headless --path $P -s "res://tests/p25_arena_test.gd"          # manual arena (58)
 & $E --headless --path $P -s "res://tests/soak_test.gd"             # 210y soak (exit code)
 & $E --path "E:\Godot Game Engine\Godot_v4.6.3-stable_win64.exe\Godot_v4.6.3-stable_win64.exe" --path $P  # play
 ```
-27 suites, 1136 counted checks at 0.23.0 (soak passes by exit code). Ground truth
+28 suites, 1195 counted checks at 0.24.0 (soak passes by exit code). Ground truth
 per release: `docs/qa/p22/sweep_summary.csv`.
 
 ## Loop
