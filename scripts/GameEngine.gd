@@ -86,6 +86,12 @@ var _achievement_rules: Array = []
 var player_focus: String = "cultivate"
 var focus_mult: float = 1.0
 var muted: bool = false
+# P24b — presence premium (ADR-004). Runtime-only view-driven state: never
+# serialized, default OFF, reset on apply_state/rebirth/ascend. When active,
+# the COMPILED QI RATE gains presence_mult (R-S7: names its scale; touches
+# nothing else — not power, tribulation, or offline).
+var _presence_active: bool = false
+const PRESENCE_MULT := 1.5
 # P8b/c — tutorial hints seen + map visitation. Original system.
 var hints_seen: Array = []
 var nodes_visited: Array = []
@@ -291,11 +297,25 @@ func _recompute_rate() -> void:
 	# P19a: the multiplier chain stays float (bounded magnitudes); only the
 	# stored result is Big. qi_per_tick coerces (it is Big after x4 growth).
 	var raw: float = BN.of(qi_per_tick).to_float() * aptitude * origin_qi_mult * dantian_mult() * _gear_mult_cached * _gather_mult * focus_mult * mind_mult() * _env_mult * _season_qi_mult() * (1.0 - 0.1 * float(deviation)) * (1.0 - clampf(toxicity, 0.0, 100.0) / 200.0) * legacy_mult * dao_flow_bonus()
+	# P24b: presence premium enters by BRANCH, not x1.0 — the bit-identical
+	# default-off claim stays auditable by eyeball (R-S13).
+	if _presence_active:
+		raw *= PRESENCE_MULT
 	if is_finite(raw):
 		_last_good_rate = raw
 	else:
 		raw = _last_good_rate
 	_cached_qi_per_tick = BN.from_float(raw)
+
+func set_presence(active: bool) -> void:
+	## P24b: avatar meditating at a map node. View-driven, runtime-only.
+	if bool(active) == _presence_active:
+		return
+	_presence_active = bool(active)
+	_recompute_rate()
+
+func is_presence_active() -> bool:
+	return _presence_active
 
 var _gear_mult_cached: float = 1.0
 
@@ -634,6 +654,8 @@ func rebirth() -> void:
 	# P12-5: the completed life settles into karma BEFORE anything resets;
 	# the soul weapon, talents, and legacy cross over intact by design.
 	# P22: guardian victories cross over too (sword dao remembered).
+	# P24b: the new life does not start meditating.
+	_presence_active = false
 	karma += karma_yield()
 	qi_earned_this_life = BN.from_float(0.0)
 	total_rebirths += 1
@@ -827,6 +849,21 @@ func set_reveal_rules(rules: Array) -> void:
 	## P21: tab-unlock table injected by caller (Main) from data/reveal.json.
 	## Engine stays data-free. Empty stat = always open (core tabs).
 	_reveal_rules = rules.duplicate()
+
+var _flight_rule: Dictionary = {}
+
+func set_flight_rule(rule: Dictionary) -> void:
+	## P24b: sword-flight unlock injected by caller (Main) from
+	## data/flight.json. Same stat-gated pattern as reveal rules.
+	_flight_rule = (rule as Dictionary).duplicate()
+
+func flight_unlocked() -> bool:
+	if _flight_rule.is_empty():
+		return false
+	return _stat_value(str(_flight_rule.get("stat", ""))) >= float(_flight_rule.get("value", 0))
+
+func flight_unlock_line() -> String:
+	return str(_flight_rule.get("line", ""))
 
 func reveal_wired() -> bool:
 	return not _reveal_rules.is_empty()
@@ -1223,6 +1260,8 @@ func ascend() -> int:
 		return 0
 	dao_marks += gain
 	dao_ascensions += 1
+	# P24b: ascension lands the avatar — presence never crosses over.
+	_presence_active = false
 	total_rebirths = 0
 	life_number += 1
 	aptitude = 1.0
@@ -1767,6 +1806,8 @@ func apply_state(d: Dictionary) -> void:
 	player_focus = str(d.get("player_focus", "cultivate"))
 	if not ["cultivate", "train", "hunt"].has(player_focus):
 		player_focus = "cultivate"
+	# P24b: presence is runtime-only — a loaded run never resumes meditating.
+	_presence_active = false
 	focus_mult = 1.0 if player_focus == "cultivate" else 0.0
 	muted = bool(d.get("muted", false))
 	hints_seen = (d.get("hints_seen", []) as Array).duplicate()

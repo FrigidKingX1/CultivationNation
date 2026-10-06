@@ -28,6 +28,9 @@ var _unready_note_done: bool = false
 # P22: one lost-duel note per fill for the same reason (duels repeat until
 # the pool drops below the bottleneck; wins always report, max seven ever).
 var _warden_note_done: bool = false
+# P24b: one stride-refusal note per locked zone (avatar movement polls
+# every frame; the warden pattern applies to feet too).
+var _stride_note: String = "#"
 # P15-Step3: victory celebration fires once per Main session, on the attempt
 # that clears the ladder (post-clear attempts are cap-refused, so no encore).
 var _victory_logged: bool = false
@@ -605,8 +608,32 @@ func _unhandled_key_input(event: InputEvent) -> void:
 			_on_mute()
 		elif event.is_action_pressed("cult_help"):
 			_on_help()
+		elif event.is_action_pressed("world_toggle_flight"):
+			_on_flight()
 		elif (event as InputEventKey).physical_keycode == KEY_ESCAPE:
 			handle_shortcut(KEY_ESCAPE)
+
+func _on_flight() -> void:
+	## P24b: sword-flight toggle. Refused warded-style before the unlock
+	## milestone (data-driven via flight.json, Q31); the unlock line names
+	## the way, mirroring guardian-gate refusals.
+	var ge: Node = get_node("/root/GameEngine")
+	var world: Node = get_node_or_null("WorldViewport/World")
+	if world == null:
+		return
+	if not bool(ge.call("flight_unlocked")):
+		_log("The sky is not yours yet — %s" % str(ge.call("flight_unlock_line")), "warn")
+		_sfx("fail")
+		return
+	var flying: bool = str(world.call("avatar_state")) != "fly"
+	world.call("set_avatar_flying", flying)
+	if flying:
+		_log("Sword-mount risen. The winds answer.")
+		_toast("Sword-flight", "realm")
+		_sfx("breakthrough")
+	else:
+		_log("Feet on the ground again.")
+	_sfx("click")
 
 func handle_shortcut(key: int) -> bool:
 	## Keyboard play. Every action routes to an existing button handler.
@@ -1704,6 +1731,7 @@ func _wire_world(ge: Node) -> void:
 	ge.call("set_achievement_rules", cdb.get("achievements"))
 	ge.call("set_prestige_defs", cdb.get("prestige"))
 	ge.call("set_reveal_rules", cdb.get("reveal"))
+	ge.call("set_flight_rule", cdb.get("flight"))
 	_realm_table = (cdb.get("realms") as Array).duplicate()
 	ge.call("set_realm_table", _realm_table)
 	var ui: Node = get_node_or_null("UI")
@@ -1778,6 +1806,7 @@ func _process(delta: float) -> void:
 	if _ui_timer >= 0.25:
 		_ui_timer = 0.0
 		_refresh_ui()
+		_refresh_stride_note()
 		_refresh_breakthrough_btn()
 		_refresh_pills_if_stale()
 		_refresh_attune_if_stale()
@@ -1847,6 +1876,29 @@ func _refresh_ui() -> void:
 	var ui: Node = get_node_or_null("UI")
 	if ui != null and ui.has_method("refresh"):
 		ui.call("refresh")
+
+func _refresh_stride_note() -> void:
+	## P24b: one warded-style note per locked zone while stride keys are
+	## held (avatar movement polls every frame; the warden pattern applies
+	## to feet too). Clears the moment the grounds admit walking again.
+	var world: Node = get_node_or_null("WorldViewport/World")
+	if world == null or not world.has_method("avatar_lock_reason"):
+		return
+	var reason: String = str(world.call("avatar_lock_reason"))
+	if reason == "":
+		_stride_note = "#"
+		return
+	if reason == _stride_note:
+		return
+	var striding: bool = false
+	for a in ["world_move_forward", "world_move_back", "world_move_left", "world_move_right"]:
+		if Input.is_action_pressed(str(a)):
+			striding = true
+			break
+	if striding:
+		_stride_note = reason
+		_log(reason + " Walk them when admitted.", "warn")
+		_sfx("fail")
 
 func _refresh_coach() -> void:
 	## P21: first-session coach marks (godot-idle skeleton fitted to our

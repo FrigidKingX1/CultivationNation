@@ -12,6 +12,7 @@ var prestige: Array = []
 var reveal: Array = []
 var guardians: Array = []
 var zones3d: Array = []
+var flight: Dictionary = {}
 var loaded: bool = false
 
 func _ready() -> void:
@@ -28,6 +29,7 @@ func load_all() -> bool:
 	reveal = _load_json_array("res://data/reveal.json")
 	guardians = _load_json_array("res://data/guardians.json")
 	zones3d = _load_json_array("res://data/zones3d.json")
+	flight = _load_json_dict("res://data/flight.json")
 	loaded = true
 	return validate()
 
@@ -69,6 +71,20 @@ func _load_json_array(path: String) -> Array:
 	if typeof(parsed) == TYPE_ARRAY:
 		return parsed
 	return []
+
+func _load_json_dict(path: String) -> Dictionary:
+	if not FileAccess.file_exists(path):
+		return {}
+	var f: FileAccess = FileAccess.open(path, FileAccess.READ)
+	if f == null:
+		return {}
+	var parsed: Variant = JSON.parse_string(f.get_as_text())
+	f.close()
+	if typeof(parsed) == TYPE_ARRAY and not (parsed as Array).is_empty():
+		return (parsed as Array)[0]
+	if typeof(parsed) == TYPE_DICTIONARY:
+		return parsed
+	return {}
 
 func validate() -> bool:
 	for r in realms:
@@ -142,5 +158,9 @@ func validate() -> bool:
 				return false
 	if zones3d.size() != gate_by_zone.size():
 		push_error("ContentDB: zones3d zone set must match beasts zones")
+		return false
+	# P24b: flight unlock rule (reveal.json pattern: stat-gated, data-owned).
+	if not (flight.has("unlock") and flight.has("stat") and flight.has("value") and flight.has("line")):
+		push_error("ContentDB: bad flight entry")
 		return false
 	return true

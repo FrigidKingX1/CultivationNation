@@ -400,13 +400,19 @@ func _poll_cultivator() -> void:
 			_ready_ring_mat.albedo_color = Color(1.0, 0.35, 0.3)
 
 # --- P24a: avatar presence (idle/walk; meditate/fly land in P24b) ---
+# --- P24b: meditate + fly states live here. ---
 # The cultivator rig IS the avatar: robe tint + aura carry over, and
 # cultivator_screen() keeps projecting it (C1 return-space unchanged).
 var _avatar_state: String = "idle"
 const WALK_SPEED := 8.0
+const FLY_MULT := 2.5
+const INTERACT_RADIUS := 6.0
+var _fly_mult: float = 1.0
+var _node_marks: Node3D = null
+var _stride_note: String = "#"
 
 func avatar_state() -> String:
-	## Headless-readable avatar state. P24a states: idle, walk.
+	## Headless-readable avatar state: idle, walk, meditate, fly.
 	return _avatar_state
 
 func avatar_move(dir: Vector2, dt: float = 0.016) -> void:
@@ -423,12 +429,62 @@ func avatar_move(dir: Vector2, dt: float = 0.016) -> void:
 	if dir.length() < 0.01:
 		_avatar_state = "idle"
 		return
-	var p: Vector3 = _cultivator.position + Vector3(dir.x, 0.0, dir.y) * WALK_SPEED * maxf(dt, 0.0)
+	if avatar_lock_reason() != "":
+		# R13: locked grounds refuse strides from ANY caller (tests drive
+		# avatar_move directly; the live poll checks too).
+		_avatar_state = "idle"
+		return
+	if _avatar_state == "meditate":
+		_break_meditation()
+	var p: Vector3 = _cultivator.position + Vector3(dir.x, 0.0, dir.y) * WALK_SPEED * _fly_mult * maxf(dt, 0.0)
 	var flat := Vector2(p.x - cx, p.z - cz)
 	if flat.length() > r * 0.9:
 		flat = flat.normalized() * r * 0.9
 	_cultivator.position = Vector3(cx + flat.x, p.y, cz + flat.y)
 	_avatar_state = "walk"
+
+func set_avatar_flying(on: bool) -> void:
+	## Sword-mount pose + speed. Only Main calls this (after the flight
+	## unlock check); the state machine otherwise owns the avatar.
+	if _cultivator == null:
+		return
+	if on:
+		_fly_mult = FLY_MULT
+		_avatar_state = "fly"
+		_cultivator.position.y += 1.5
+		_cultivator.rotation.x = -0.25
+	else:
+		_fly_mult = 1.0
+		if _avatar_state == "fly":
+			_avatar_state = "idle"
+			_cultivator.position.y = maxf(_cultivator.position.y - 1.5, 0.0)
+		_cultivator.rotation.x = 0.0
+
+func avatar_lock_reason() -> String:
+	## Warded-style walking rule, read off existing engine zone data
+	## (R13 discipline: no duplicate rule logic). "" means walkable.
+	var ge := _engine()
+	if ge == null:
+		return ""
+	var entry: Dictionary = _zone_entry(_zone if _zone != "" else "Dewfield")
+	var need: int = int((entry.get("gate", {}) as Dictionary).get("min_realm", 0))
+	if int(ge.get("realm_index")) >= need:
+		return ""
+	return "The %s grounds want realm %d." % [str(entry.get("id", "?")), need]
+
+func avatar_near_node() -> String:
+	## Map node within interaction radius of the avatar, else "".
+	var ge := _engine()
+	if ge == null or _cultivator == null or _node_marks == null:
+		return ""
+	for m in _node_marks.get_children():
+		if not (m as Node3D).visible:
+			continue
+		var mp: Vector3 = (m as Node3D).global_position
+		var ap: Vector3 = _cultivator.global_position
+		if Vector2(mp.x - ap.x, mp.z - ap.z).length() <= INTERACT_RADIUS:
+			return str(m.get_meta("node_id", ""))
+	return ""
 
 func _engine_running() -> bool:
 	var ge := _engine()
@@ -439,9 +495,17 @@ func _engine_running() -> bool:
 func _poll_avatar(dt: float) -> void:
 	## Live movement: WASD world actions while playing with panels closed.
 	## Same UIManager gating source as orbit input — one rule, two cameras.
+	## Locked grounds refuse strides (R13: engine zone rules, view-side
+	## enforcement only). Interact at a node marker meditates (presence);
+	## any stride breaks meditation.
 	if _ui_open() or not _engine_running():
 		if _avatar_state == "walk":
 			_avatar_state = "idle"
+		return
+	if avatar_lock_reason() != "":
+		if _avatar_state == "walk" or _avatar_state == "meditate":
+			_avatar_state = "idle"
+		_break_meditation()
 		return
 	var dir := Vector2.ZERO
 	if Input.is_action_pressed("world_move_forward"):
@@ -452,7 +516,37 @@ func _poll_avatar(dt: float) -> void:
 		dir.x -= 1.0
 	if Input.is_action_pressed("world_move_right"):
 		dir.x += 1.0
-	avatar_move(dir.normalized() if dir.length() > 1.0 else dir, dt)
+	if dir.length() > 0.01:
+		if _avatar_state == "meditate":
+			_break_meditation()
+		avatar_move(dir.normalized() if dir.length() > 1.0 else dir, dt)
+		return
+	if Input.is_action_pressed("world_interact"):
+		_try_meditate()
+		return
+	if _avatar_state == "walk":
+		_avatar_state = "idle"
+
+func _break_meditation() -> void:
+	if _avatar_state == "meditate":
+		_avatar_state = "idle"
+	var ge := _engine()
+	if ge != null and ge.has_method("set_presence"):
+		ge.call("set_presence", false)
+
+func _try_meditate() -> void:
+	## world_interact at a node marker: meditate state + presence, provided
+	## the run is live (not paused). Rule-5 factor engages engine-side.
+	var ge := _engine()
+	if ge == null or not _engine_running():
+		return
+	if _avatar_state == "fly":
+		return
+	if avatar_near_node() == "":
+		return
+	_avatar_state = "meditate"
+	if ge.has_method("set_presence"):
+		ge.call("set_presence", true)
 
 func _update_follow() -> void:
 	## Follow camera during play; orbit framing (static island POI) while
@@ -821,6 +915,49 @@ func _poll_seed() -> void:
 		_free_island(str(z))
 	_ensure_residency()
 	_move_anchors(_zone if _zone != "" else "Dewfield")
+	_rebuild_node_marks(_zone if _zone != "" else "Dewfield")
+	_rebuild_beasts(_zone if _zone != "" else "Dewfield")
+	_rebuild_node_marks(_zone if _zone != "" else "Dewfield")
+
+func _rebuild_node_marks(zone: String) -> void:
+	## Meditation points: the zone's map nodes on a deterministic
+	## golden-angle ring keyed to (terrain_seed, index) — R12, same as
+	## beast markers. Rebuilt on zone change and seed change.
+	if _node_marks == null:
+		_node_marks = Node3D.new()
+		_node_marks.name = "NodeMarks"
+		add_child(_node_marks)
+	for c in _node_marks.get_children():
+		_node_marks.remove_child(c)
+		c.queue_free()
+	var ge := _engine()
+	if ge == null:
+		return
+	var entry: Dictionary = _zone_entry(zone)
+	var spawn: Array = ((entry.get("spawn", {}) as Dictionary).get("pos", [0.0, 0.0, 0.0]) as Array)
+	var base := Vector3(float(spawn[0]), 0.0, float(spawn[2]))
+	var seed: int = _terrain_seed(zone)
+	var shown: int = 0
+	for n in (ge.get("map_nodes") as Array):
+		if str((n as Dictionary).get("zone", "")) != zone:
+			continue
+		if shown >= 4:
+			break
+		var a: float = float(shown) * 2.39996 + float(seed % 1000) * 0.001
+		var d: float = 10.0 + float(shown % 2) * 4.0
+		var mark := MeshInstance3D.new()
+		mark.name = "NodeMark%d" % shown
+		var cyl := CylinderMesh.new()
+		cyl.top_radius = 0.5
+		cyl.bottom_radius = 0.7
+		cyl.height = 1.2
+		cyl.radial_segments = 8
+		mark.mesh = cyl
+		mark.material_override = _unshaded(Color(0.85, 0.66, 0.22), 1.5)
+		mark.position = base + Vector3(cos(a) * d, 0.6, sin(a) * d)
+		mark.set_meta("node_id", str((n as Dictionary).get("id", "")))
+		_node_marks.add_child(mark)
+		shown += 1
 
 func _focus_on_island(zone: String) -> void:
 	var entry: Dictionary = _zone_entry(zone)
@@ -999,6 +1136,7 @@ func _poll_world_state() -> void:
 		_last_beast_zone = z
 		if _beast_row != null:
 			_rebuild_beasts(z)
+		_rebuild_node_marks(z)
 	if ge == null:
 		return
 	var s: int = int(ge.call("season_index"))

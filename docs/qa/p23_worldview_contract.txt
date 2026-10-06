@@ -31,8 +31,13 @@ func _build_cultivator() -> void:
 func _poll_cultivator() -> void:
 func avatar_state() -> String:
 func avatar_move(dir: Vector2, dt: float = 0.016) -> void:
+func set_avatar_flying(on: bool) -> void:
+func avatar_lock_reason() -> String:
+func avatar_near_node() -> String:
 func _engine_running() -> bool:
 func _poll_avatar(dt: float) -> void:
+func _break_meditation() -> void:
+func _try_meditate() -> void:
 func _update_follow() -> void:
 func _build_cloud_sea() -> void:
 func _load_zones() -> void:
@@ -57,6 +62,7 @@ func _build_shrine(root: Node3D, zone: String, r: float, amp: float) -> void:
 func _pal_color(pal: Dictionary, key: String, fallback: Color) -> Color:
 func _dress_island(zone: String) -> void:
 func _poll_seed() -> void:
+func _rebuild_node_marks(zone: String) -> void:
 func _focus_on_island(zone: String) -> void:
 func _move_anchors(zone: String) -> void:
 func _tier_of_realm(realm_index: int) -> int:
