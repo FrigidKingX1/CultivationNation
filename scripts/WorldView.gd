@@ -599,7 +599,7 @@ func _try_interact() -> void:
 		_shrine_request = shrine
 		_avatar_state = "idle"
 		return
-	_try_meditate()
+	_try_node_or_leyline()
 
 func _try_den(beast_id: String) -> void:
 	## P25b: den challenge entry. Refusal below quarter strength (power
@@ -854,6 +854,34 @@ func _break_meditation() -> void:
 	var ge := _engine()
 	if ge != null and ge.has_method("set_presence"):
 		ge.call("set_presence", false)
+
+var _leyline_request: String = ""
+
+func take_leyline_request() -> String:
+	## One-shot consume for Main's poll: interact at a node whose next
+	## channel floor is met queues the ley-line modal (attune meditate).
+	var out: String = _leyline_request
+	_leyline_request = ""
+	return out
+
+func meditate_at_node() -> void:
+	## Public wrapper so Main's ley-line modal can offer meditation
+	## without reaching into the private interact path.
+	_try_meditate()
+
+func _try_node_or_leyline() -> void:
+	## 0.26b: interact routing at a node marker — when a sealed channel
+	## remains and its realm floor is met, queue the ley-line modal for
+	## Main (attune / meditate / leave); otherwise meditate as before.
+	## Below-floor and fully-open states keep the existing path untouched.
+	var ge := _engine()
+	if ge != null:
+		var next: Dictionary = ge.call("leyline_next")
+		if not next.is_empty() and int(ge.get("realm_index")) >= int(next.get("floor", 0)) and avatar_near_node() != "":
+			_leyline_request = str(next.get("id", ""))
+			_avatar_state = "idle"
+			return
+	_try_meditate()
 
 func _try_meditate() -> void:
 	## world_interact at a node marker: meditate state + presence, provided

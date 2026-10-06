@@ -29,6 +29,10 @@ R-S20 Every new test or diagnostic probe must demonstrate it can fail —
      under a targeted fault, or by asserting its own write/read path —
      before its green is trusted. (0.25.0: vacuous panel-freeze test;
      cultivate-where-train probe edit.)
+R-S21 Before naming any new system, state field, or constant, grep the tree
+     for the identifier across save keys, engine dicts, and constants;
+     collisions rename at design time, never after migration. (0.26a:
+     "attunement" already owned by P15 art attunement.)
 
 ## Engineering
 R-S7  State your scale: every new power constant names its scale in-code. (0.21.0)

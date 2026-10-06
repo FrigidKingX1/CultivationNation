@@ -2,7 +2,7 @@ extends Node
 ## SaveManager autoload — versioned JSON saves, backup, offline progress. Original code.
 ## Stores only IDs/flags/stats, never authored text (avoids CoFD browser-limit failure mode).
 
-const SAVE_VERSION: int = 13
+const SAVE_VERSION: int = 14
 const SLOT_PATH: String = "user://cultivation_nation_save.json"
 const BACKUP_PATH: String = "user://cultivation_nation_save.bak.json"
 const OFFLINE_CAP_SECONDS: int = 8 * 3600
@@ -244,6 +244,13 @@ func _migrate(d: Dictionary) -> void:
 		if not eng13.has("heaven_marks"):
 			eng13["heaven_marks"] = 0
 		d["engine"] = eng13
+	if ver < 14:
+		# v13 -> v14: 0.26b ley-line attunement. Old saves never opened a
+		# channel. Fill-defaults only.
+		var eng14: Dictionary = d.get("engine", {})
+		if not eng14.has("leyline_open"):
+			eng14["leyline_open"] = 0
+		d["engine"] = eng14
 	d["save_version"] = SAVE_VERSION
 
 func apply_offline(saved_unix: int, now_unix: int = -1) -> Dictionary:

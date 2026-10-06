@@ -247,7 +247,7 @@ func _test_migration() -> void:
 	f.store_string(JSON.stringify({"save_version": 10, "engine": eng, "extra": {}}))
 	f.close()
 	var loaded: Dictionary = sm.call("load_game")
-	_check(int(loaded.get("save_version", 0)) == 13, "v10 fixture stamped to v13")
+	_check(int(loaded.get("save_version", 0)) == 14, "v10 fixture stamped to v14")
 	_check(bool((loaded.get("engine", {}) as Dictionary).has("coach_done")), "v10->v11 fills coach default")
 	_check(not bool(ge.get("coach_done")), "old saves never saw the coach")
 	ge.queue_free()

@@ -13,6 +13,7 @@ var reveal: Array = []
 var guardians: Array = []
 var zones3d: Array = []
 var flight: Dictionary = {}
+var leylines: Array = []
 var loaded: bool = false
 
 func _ready() -> void:
@@ -30,6 +31,7 @@ func load_all() -> bool:
 	guardians = _load_json_array("res://data/guardians.json")
 	zones3d = _load_json_array("res://data/zones3d.json")
 	flight = _load_json_dict("res://data/flight.json")
+	leylines = _load_json_array("res://data/leylines.json")
 	loaded = true
 	return validate()
 
@@ -166,4 +168,31 @@ func validate() -> bool:
 	if not realms.is_empty() and (int(flight.get("value", -1)) < 0 or int(flight.get("value", -1)) >= realms.size()):
 		push_error("ContentDB: flight unlock realm outside the ladder")
 		return false
+	# 0.26b: ley-line channels — exactly 8, immutable sequence, floors on
+	# the ladder, costs positive + monotonic. Unknown fields reject.
+	var want_ids: Array = ["leyline_01", "leyline_02", "leyline_03", "leyline_04", "leyline_05", "leyline_06", "leyline_07", "leyline_08"]
+	if leylines.size() != 8:
+		push_error("ContentDB: leylines must hold exactly 8 channels")
+		return false
+	var prev_cost: float = 0.0
+	for i in range(leylines.size()):
+		var c: Dictionary = leylines[i]
+		for k in c:
+			if not ["id", "channel", "name", "floor", "floor_realm", "cost"].has(str(k)):
+				push_error("ContentDB: leyline has unknown field")
+				return false
+		if not (c.has("id") and c.has("channel") and c.has("name") and c.has("floor") and c.has("floor_realm") and c.has("cost")):
+			push_error("ContentDB: bad leyline entry")
+			return false
+		if str(c.get("id", "")) != str(want_ids[i]):
+			push_error("ContentDB: leyline sequence is immutable")
+			return false
+		if not realms.is_empty() and (int(c.get("floor", -1)) < 0 or int(c.get("floor", -1)) >= realms.size()):
+			push_error("ContentDB: leyline floor outside the ladder")
+			return false
+		var cost: float = float(c.get("cost", 0.0))
+		if cost <= 0.0 or cost <= prev_cost:
+			push_error("ContentDB: leyline costs must be positive + monotonic")
+			return false
+		prev_cost = cost
 	return true

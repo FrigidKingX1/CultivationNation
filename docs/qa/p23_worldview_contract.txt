@@ -57,6 +57,9 @@ func _hud_text(text_name: String) -> Label3D:
 func _free_fight_hud() -> void:
 func _update_fight_hud() -> void:
 func _break_meditation() -> void:
+func take_leyline_request() -> String:
+func meditate_at_node() -> void:
+func _try_node_or_leyline() -> void:
 func _try_meditate() -> void:
 func _update_follow() -> void:
 func _build_cloud_sea() -> void:

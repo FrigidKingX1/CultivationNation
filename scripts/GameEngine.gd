@@ -116,6 +116,14 @@ var last_demotion: Dictionary = {}
 var heaven_marks: int = 0
 const HEAVEN_MARK_MULT := 1.02
 const HEAVEN_MARK_CAP := 7
+# 0.26b — ley-line attunement. leyline_open counts sequentially opened
+# meridian channels (0-8, table-owned in data/leylines.json). WORLD-class
+# persistence: cleared on Samsara and ascension, LOADED on apply_state
+# (the inverse of presence). Named leyline_ throughout: `attunement` is
+# taken by P15 per-art drill attunement (R-S21).
+var leyline_open: int = 0
+const LEYLINE_STEP_MULT := 0.08
+var _leyline_table: Array = []
 # P15-Step4: toxicity backlash. Heavenly lightning agitates pill residue:
 # crossing triumphant at toxicity >= BACKLASH_TOXICITY scars all the same.
 # Threshold tuned to Step-0 data (natural max 12 = one drink; 24 = a
@@ -316,6 +324,13 @@ func _recompute_rate() -> void:
 	# below never fires for the pacing bot (R-S13).
 	if heaven_marks > 0:
 		raw *= pow(HEAVEN_MARK_MULT, float(heaven_marks))
+	# 0.26b: ley-line attunement compounds the compiled rate (R-S7:
+	# leyline_mult, qi-rate scale, distinct from PRESENCE_MULT and
+	# heaven_mark_mult). Branch-guarded per the pinned insertion contract
+	# (post-heaven-marks, pre-finite-guard) — the default path never
+	# opens channels, so the pacing line stays bit-identical (R-S13).
+	if leyline_open > 0:
+		raw *= leyline_mult()
 	if is_finite(raw):
 		_last_good_rate = raw
 	else:
@@ -330,6 +345,43 @@ func set_stake(stake: String) -> void:
 
 func get_stake() -> String:
 	return stakes_preference
+
+func leyline_mult() -> float:
+	## 0.26b: attunement factor on the compiled qi-rate scale (R-S7).
+	## Linear in opened channels: full eight at +8% each = x1.64.
+	return 1.0 + LEYLINE_STEP_MULT * float(leyline_open)
+
+func set_leyline_table(t: Array) -> void:
+	## Channel params injected by caller (Main/tests) from
+	## data/leylines.json. Engine stays data-free.
+	_leyline_table = t.duplicate()
+
+func leyline_entry(idx: int) -> Dictionary:
+	if idx < 0 or idx >= _leyline_table.size():
+		return {}
+	return _leyline_table[idx]
+
+func leyline_next() -> Dictionary:
+	## The next sealed channel, or {} when all eight stand open.
+	return leyline_entry(leyline_open)
+
+func attune_next() -> Dictionary:
+	## 0.26b: open the next ley-line channel (node modal calls this).
+	## Sequential; refuses warded-style naming the gap (floor or qi).
+	## Returns {ok, reason, line} — reason is one of ok/sealed/floor/qi.
+	var entry: Dictionary = leyline_next()
+	if entry.is_empty():
+		return {"ok": false, "reason": "sealed", "line": "All eight channels stand open."}
+	var floor: int = int(entry.get("floor", 0))
+	if realm_index < floor:
+		return {"ok": false, "reason": "floor", "line": "The %s sleeps until realm %d (now %d)." % [str(entry.get("name", "channel")), floor + 1, realm_index + 1]}
+	var cost: float = float(entry.get("cost", 0.0))
+	if BN.of(qi).lt(BN.from_float(cost)):
+		return {"ok": false, "reason": "qi", "line": "Attuning the %s demands %d qi (held %d)." % [str(entry.get("name", "channel")), int(cost), int(BN.of(qi).to_float())]}
+	qi = BN.of(qi).minus(BN.from_float(cost))
+	leyline_open += 1
+	_recompute_rate()
+	return {"ok": true, "reason": "ok", "open": leyline_open, "line": "The %s opens — qi flows freer (x%.2f)." % [str(entry.get("name", "channel")), leyline_mult()]}
 
 func _crossed_tier(from_realm: int, to_realm: int) -> bool:
 	## True when a crossing moved across a macro-tier boundary.
@@ -744,6 +796,9 @@ func rebirth() -> void:
 	# P22: guardian victories cross over too (sword dao remembered).
 	# P24b: the new life does not start meditating.
 	_presence_active = false
+	# 0.26b: reincarnation re-opens the body's meridians (world-class —
+	# cleared on Samsara; karma/Dao and heaven marks own the cross-life axis).
+	leyline_open = 0
 	karma += karma_yield()
 	qi_earned_this_life = BN.from_float(0.0)
 	total_rebirths += 1
@@ -1350,6 +1405,9 @@ func ascend() -> int:
 	dao_ascensions += 1
 	# P24b: ascension lands the avatar — presence never crosses over.
 	_presence_active = false
+	# 0.26b: ascension leaves the opened channels behind (world-class,
+	# same reset path as gear/techniques).
+	leyline_open = 0
 	total_rebirths = 0
 	life_number += 1
 	aptitude = 1.0
@@ -1915,6 +1973,7 @@ func get_state() -> Dictionary:
 		"offline_mortality": offline_mortality,
 		"guardians": {"defeated": (guardians.get("defeated", []) as Array).duplicate(), "attempts": (guardians.get("attempts", {}) as Dictionary).duplicate()},
 		"stakes_preference": stakes_preference, "heaven_marks": heaven_marks,
+		"leyline_open": leyline_open,
 	}
 
 func apply_state(d: Dictionary) -> void:
@@ -1988,6 +2047,11 @@ func apply_state(d: Dictionary) -> void:
 	var sp: String = str(d.get("stakes_preference", "composed"))
 	stakes_preference = sp if ["composed", "tempered", "heaven"].has(sp) else "composed"
 	heaven_marks = clampi(int(d.get("heaven_marks", 0)), 0, HEAVEN_MARK_CAP)
+	# 0.26b: ley-line channels are SAVED state — a loaded run resumes
+	# attuned (the inverse of presence, which never resumes meditating).
+	leyline_open = clampi(int(d.get("leyline_open", 0)), 0, 8)
+	if not _leyline_table.is_empty():
+		leyline_open = mini(leyline_open, _leyline_table.size())
 	# P22: guardians persist rebirth AND ascend (sword dao remembered).
 	# Validate shapes: defeated must be an id array, attempts an id->int map.
 	guardians = {"defeated": [], "attempts": {}}

@@ -334,7 +334,7 @@ func _test_migration() -> void:
 	# v12 fixture (guardians present, stakes absent) migrates chained to
 	# v13 with composed/zero defaults; progress preserved verbatim.
 	var SM: GDScript = load("res://scripts/SaveManager.gd")
-	_check(int(SM.get("SAVE_VERSION")) == 13, "save version is 13")
+	_check(int(SM.get("SAVE_VERSION")) == 14, "save version is 14")
 	var GE: GDScript = load("res://scripts/GameEngine.gd")
 	var ge: Node = GE.new()
 	root.add_child(ge)
@@ -351,7 +351,7 @@ func _test_migration() -> void:
 	f.store_string(JSON.stringify({"save_version": 12, "saved_unix": 1, "engine": eng, "extra": {}}))
 	f.close()
 	var loaded: Dictionary = sm.call("load_game")
-	_check(int(loaded.get("save_version", 0)) == 13, "v12 fixture stamped to v13")
+	_check(int(loaded.get("save_version", 0)) == 14, "v12 fixture stamped to v14")
 	var leng: Dictionary = loaded.get("engine", {})
 	_check(str(leng.get("stakes_preference", "")) == "composed", "v12 gains composed default")
 	_check(int(leng.get("heaven_marks", -1)) == 0, "v12 gains zero marks")

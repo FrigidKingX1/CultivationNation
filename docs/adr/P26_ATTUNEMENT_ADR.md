@@ -1,8 +1,53 @@
 # 0.26.0 ADR — Ley-Line Attunement
-Status: DRAFT → pending Q44–Q48.
+Status: DRAFT → 0.26a SIGNED. 0.26b AUTHORIZED.
 Theme (single): ATTUNEMENT — the meridians, finally physical.
 Cites: ADR-002 Option B (this IS the revisit); rules 1, 2, 5, 7, 8, 11;
-R-S7/R-S8/R-S11/R-S12/R-S13/R-S16/R-S19.
+R-S7/R-S8/R-S11/R-S12/R-S13/R-S16/R-S19/R-S21.
+
+## Amendment 1 — 0.26a tree-truth pins (auditor-signed)
+Tree sources: GameEngine.gd _recompute_rate L302–323.
+
+### P1 — Composition map (pinned)
+Single expression L308: base × aptitude × origin × dantian × gear × gather ×
+focus × mind × env × season × deviation × toxicity × legacy × dao_flow.
+Branches: presence L311–312, heaven-marks L317–318. Finite guard L319–322.
+No stake factor in the rate (stakes scale windfalls only). karma/FLY_MULT
+outside the qi rate. L309–310 / L313–316 unmapped; irrelevant to insertion.
+
+### P2 — Insertion contract (pinned)
+LEYLINE factor enters as a BRANCH — `if leyline_open > 0:
+raw *= leyline_mult` — post-L318 (after heaven-marks), pre-L319 (BEFORE the
+finite guard, so the guard covers it). Branch, not an L308 expression term.
+Active-path multiply order pinned; inactive path performs no multiply
+(bit-identical default, R-S13). R-S7 naming: qi-rate scale,
+leyline_mult = 1 + LEYLINE_STEP_MULT × leyline_open.
+
+### P3 — Rename (ratified; binding)
+All identifiers are leyline_*: data/leylines.json, tools/gen_leylines.py,
+v14 field leyline_open, and the suite is p27_leyline_test.gd (renamed from
+the draft's p27_attunement_test.gd — runner list and ADR updated together).
+Prose rule: bare "attunement" means art attunement (P15); the new system is
+"ley-line"/leyline in all identifiers and UI strings.
+
+### P4 — Calibration bases (generator truth, R-S8)
+R08 req 4,177,920; R16 req 128,849,018,880 (corrected against realms.json).
+Corrected cost curve in this ADR. Floors per Q47: agent-selects from the
+tier structure, approved in the 0.26.0 report.
+
+### P5 — Empirical verdict (0.25.0 band question CLOSED)
+Heaven-until-first-demotion-then-composed: 72,984/13 — 54 ticks faster than
+pure composed. Selective HC is net positive; greedy full-HC stall is policy
+failure. Mechanism CONFIRMED by tree (not hypothesis): standard Shaky adds
++1 deviation (permanent 10% rate bleed, L552-558) while Heaven-Shaky
+REPLACES it with the demotion cycle (no double punishment, L584) and
+restores deviation from snapshot (L595) — HC is deviation insurance at
+favored crossings.
+
+### P6 — Ratifications
+Q44 world-class (reset on Samsara/ascension; LOADED on apply_state — the
+INVERSE of the presence case; explicit test line) · Q45 +8% additive,
+full ×1.64 · Q46 node+modal · Q47 agent-selects floors · Q48 arc:
+ley-line 0.26.0 → UI evolution 0.27.0 → 1.0 question at the 0.27.0 gate.
 
 ## Scope lock
 - Engine touch class: rate factor #4 (karma, presence, heaven_mark, now

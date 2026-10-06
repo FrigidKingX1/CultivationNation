@@ -1,0 +1,10 @@
+[
+ {"id": "leyline_01", "channel": "dantian_core", "name": "Dantian Core", "floor": 1, "floor_realm": "Brookstone Hollow", "cost": 2000.0},
+ {"id": "leyline_02", "channel": "governing_vessel", "name": "Governing Vessel", "floor": 4, "floor_realm": "Cinder Vale", "cost": 80000.0},
+ {"id": "leyline_03", "channel": "conception_vessel", "name": "Conception Vessel", "floor": 7, "floor_realm": "Lantern Deep", "cost": 2000000.0},
+ {"id": "leyline_04", "channel": "heavenly_eye", "name": "Heavenly Eye", "floor": 11, "floor_realm": "First Light Summit", "cost": 240000000.0},
+ {"id": "leyline_05", "channel": "jade_pillow", "name": "Jade Pillow", "floor": 15, "floor_realm": "Gravenight Rise", "cost": 60000000000.0},
+ {"id": "leyline_06", "channel": "spirit_gate", "name": "Spirit Gate", "floor": 19, "floor_realm": "Ninefold Rapids", "cost": 8000000000000.0},
+ {"id": "leyline_07", "channel": "life_gate", "name": "Life Gate", "floor": 22, "floor_realm": "Paper Lantern Shoal", "cost": 500000000000000.0},
+ {"id": "leyline_08", "channel": "bubbling_spring", "name": "Bubbling Spring", "floor": 24, "floor_realm": "Whitebrow Summit", "cost": 8000000000000000.0}
+]

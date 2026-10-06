@@ -1749,6 +1749,7 @@ func _wire_world(ge: Node) -> void:
 	ge.call("set_prestige_defs", cdb.get("prestige"))
 	ge.call("set_reveal_rules", cdb.get("reveal"))
 	ge.call("set_flight_rule", cdb.get("flight"))
+	ge.call("set_leyline_table", cdb.get("leylines"))
 	_realm_table = (cdb.get("realms") as Array).duplicate()
 	ge.call("set_realm_table", _realm_table)
 	var ui: Node = get_node_or_null("UI")
@@ -1948,9 +1949,13 @@ func _refresh_shrine_den() -> void:
 				_log("Beast down. The grounds remember.", "realm")
 				_toast("Beast down", "realm")
 				_sfx("breakthrough")
-			else:
-				_log("Driven back to the zone mouth. No shame in retreating.", "warn")
-				_sfx("fail")
+		else:
+			_log("Driven back to the zone mouth. No shame in retreating.", "warn")
+			_sfx("fail")
+	if world.has_method("take_leyline_request"):
+		var lid: String = str(world.call("take_leyline_request"))
+		if lid != "":
+			_show_leyline(lid)
 
 func _pledge_name(gid: String) -> String:
 	var ge: Node = get_node_or_null("/root/GameEngine")
@@ -2025,6 +2030,66 @@ func _voice_demotion(ge: Node) -> void:
 	_log("Heaven-Challenging Shaky: cast down from realm %d to %d — the climb resumes from Late." % [int(dem.get("from", 0)), int(dem.get("to", 0))], "warn")
 	_toast("Cast down a realm", "warn")
 	_sfx("fail")
+
+func _build_leyline_dialog(lid: String) -> AcceptDialog:
+	## 0.26b: meditation-node ley-line modal. Offers the next sealed
+	## channel (name, cost, resulting factor) with attune / meditate /
+	## leave. Pure build (headless-testable); _show_leyline presents it.
+	## Bare "attunement" prose is avoided: the word means art attunement.
+	var ge: Node = get_node_or_null("/root/GameEngine")
+	var next: Dictionary = ge.call("leyline_next") if ge != null else {}
+	var dlg := AcceptDialog.new()
+	dlg.name = "LeylineDialog"
+	dlg.title = "Meridian Stone"
+	dlg.ok_button_text = "Leave"
+	var box := VBoxContainer.new()
+	box.name = "LeylineBox"
+	box.add_theme_constant_override("separation", 8)
+	dlg.add_child(box)
+	var head := Label.new()
+	head.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
+	if next.is_empty():
+		head.text = "All eight channels stand open. The meridians sing."
+	else:
+		head.text = "Next: the %s — %d qi to open (flow x%.2f)." % [str(next.get("name", "channel")), int(float(next.get("cost", 0.0))), 1.0 + 0.08 * float(int(ge.get("leyline_open")) + 1) if ge != null else 1.08]
+	box.add_child(head)
+	if not next.is_empty():
+		var attune := Button.new()
+		attune.text = "Open the %s" % str(next.get("name", "channel"))
+		attune.pressed.connect(_on_leyline_attune.bind(dlg))
+		box.add_child(attune)
+	var med := Button.new()
+	med.text = "Meditate instead"
+	med.pressed.connect(_on_leyline_meditate.bind(dlg))
+	box.add_child(med)
+	return dlg
+
+func _on_leyline_attune(dlg: Window) -> void:
+	var ge: Node = get_node_or_null("/root/GameEngine")
+	if ge != null:
+		var res: Dictionary = ge.call("attune_next")
+		if bool(res.get("ok", false)):
+			_log(str(res.get("line", "A channel opens.")), "realm")
+			_toast("Channel opened", "realm")
+			_sfx("breakthrough")
+		else:
+			_log(str(res.get("line", "The stone is silent.")), "warn")
+			_sfx("fail")
+	dlg.hide()
+	dlg.queue_free()
+
+func _on_leyline_meditate(dlg: Window) -> void:
+	dlg.hide()
+	dlg.queue_free()
+	var world: Node = get_node_or_null("WorldViewport/World")
+	if world != null and world.has_method("meditate_at_node"):
+		world.call("meditate_at_node")
+
+func _show_leyline(lid: String) -> void:
+	var ui: Node = get_node_or_null("UI")
+	if ui == null:
+		return
+	MODAL.present(ui, _build_leyline_dialog(lid))
 
 func _refresh_coach() -> void:
 	## P21: first-session coach marks (godot-idle skeleton fitted to our

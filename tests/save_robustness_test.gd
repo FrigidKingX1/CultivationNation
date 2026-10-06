@@ -76,7 +76,7 @@ func _initialize() -> void:
 	_write(SLOT, JSON.stringify({"save_version": 0, "engine": {"age": 33, "qi": 77}}))
 	ge.set("age_years", 18)
 	var loaded3: Dictionary = sm.call("load_game")
-	_check(int(loaded3.get("save_version", 0)) == 13, "v0 fixture stamped to v13")
+	_check(int(loaded3.get("save_version", 0)) == 14, "v0 fixture stamped to v14")
 	_check(str((loaded3["engine"] as Dictionary).get("origin_id", "")) == "origin_wayfarer", "v0->v2 fills origin default")
 	_check(int((loaded3["engine"] as Dictionary).get("pause_before_death_years", -1)) == 0, "v0->v2 fills pause default")
 	_check(int(ge.get("age_years")) == 33, "v0 legacy age maps to age_years")
@@ -89,7 +89,7 @@ func _initialize() -> void:
 		"life_number": 2, "aptitude": 1.25, "total_rebirths": 1, "time_scale": 5.0}
 	_write(SLOT, JSON.stringify({"save_version": 1, "engine": v1eng, "extra": {}}))
 	var loaded4: Dictionary = sm.call("load_game")
-	_check(int(loaded4.get("save_version", 0)) == 13, "v1 fixture stamped to v13")
+	_check(int(loaded4.get("save_version", 0)) == 14, "v1 fixture stamped to v14")
 	_check(int(ge.get("tick_count")) == 100, "v1 tick_count preserved")
 	_check(float(ge.get("time_scale")) == 5.0, "v1 time_scale preserved")
 	_check(str(ge.get("origin_id")) == "origin_wayfarer", "v1->v3 origin default")
@@ -107,7 +107,7 @@ func _initialize() -> void:
 		"pause_before_death_years": 0}
 	_write(SLOT, JSON.stringify({"save_version": 2, "engine": v2eng, "extra": {}}))
 	var loaded5: Dictionary = sm.call("load_game")
-	_check(int(loaded5.get("save_version", 0)) == 13, "v2 fixture stamped to v13")
+	_check(int(loaded5.get("save_version", 0)) == 14, "v2 fixture stamped to v14")
 	_check(int(ge.get("tick_count")) == 7, "v2 tick_count preserved")
 	_check((ge.get("gear") as Dictionary).is_empty(), "v2->v3 gear default empty")
 	_check((ge.get("sect") as Dictionary).is_empty(), "v2->v3 sect default empty")
@@ -127,7 +127,7 @@ func _initialize() -> void:
 		"achievements": []}
 	_write(SLOT, JSON.stringify({"save_version": 4, "engine": v4eng, "extra": {}}))
 	var loaded6: Dictionary = sm.call("load_game")
-	_check(int(loaded6.get("save_version", 0)) == 13, "v4 fixture stamped to v13")
+	_check(int(loaded6.get("save_version", 0)) == 14, "v4 fixture stamped to v14")
 	_check(str(ge.get("player_focus")) == "cultivate", "v4->v5 focus default")
 	_check(not bool(ge.get("muted")), "v4->v5 muted default false")
 
@@ -145,7 +145,7 @@ func _initialize() -> void:
 		"achievements": [], "player_focus": "cultivate", "muted": false}
 	_write(SLOT, JSON.stringify({"save_version": 5, "engine": v5eng, "extra": {}}))
 	var loaded7: Dictionary = sm.call("load_game")
-	_check(int(loaded7.get("save_version", 0)) == 13, "v5 fixture stamped to v13")
+	_check(int(loaded7.get("save_version", 0)) == 14, "v5 fixture stamped to v14")
 	_check((ge.get("hints_seen") as Array).is_empty(), "v5->v6 hints default empty")
 	_check((ge.get("nodes_visited") as Array).is_empty(), "v5->v6 visited default empty")
 
@@ -165,7 +165,7 @@ func _initialize() -> void:
 		"hints_seen": [], "nodes_visited": []}
 	_write(SLOT, JSON.stringify({"save_version": 6, "engine": v6eng, "extra": {}}))
 	var loaded8: Dictionary = sm.call("load_game")
-	_check(int(loaded8.get("save_version", 0)) == 13, "v6 fixture stamped to v13")
+	_check(int(loaded8.get("save_version", 0)) == 14, "v6 fixture stamped to v14")
 	_check((ge.get("roots") as Dictionary).is_empty(), "v6->v7 roots default empty")
 	_check(float(ge.get("mind")) == 70.0, "v6->v7 mind default rested")
 	_check(int(ge.get("deviation")) == 0, "v6->v7 deviation default clean")
@@ -198,7 +198,7 @@ func _initialize() -> void:
 		"qi_earned_this_life": 500.0}
 	_write(SLOT, JSON.stringify({"save_version": 7, "engine": v7eng, "extra": {}}))
 	var loaded9: Dictionary = sm.call("load_game")
-	_check(int(loaded9.get("save_version", 0)) == 13, "v7 fixture stamped to v13")
+	_check(int(loaded9.get("save_version", 0)) == 14, "v7 fixture stamped to v14")
 	_check((ge.get("attunement") as Dictionary).is_empty(), "v7->v8 attunement default empty")
 	_check(not bool(ge.get("victorious")), "v7->v8 victory default false")
 	_check(ge.call("qi_num") == 9.0, "v6 qi preserved across migration")
@@ -227,7 +227,7 @@ func _initialize() -> void:
 		"attunement": {}, "victorious": false}
 	_write(SLOT, JSON.stringify({"save_version": 8, "engine": v8eng, "extra": {}}))
 	var loaded10: Dictionary = sm.call("load_game")
-	_check(int(loaded10.get("save_version", 0)) == 13, "v8 fixture stamped to v13")
+	_check(int(loaded10.get("save_version", 0)) == 14, "v8 fixture stamped to v14")
 	_check(str(ge.get("offline_mortality")) == "vigil", "v8->v9 seclusion defaults vigil")
 	_check(ge.call("qi_num") == 7.0, "v8 qi preserved across migration")
 
@@ -255,7 +255,7 @@ func _initialize() -> void:
 		"offline_mortality": "vigil"}
 	_write(SLOT, JSON.stringify({"save_version": 9, "engine": v9eng, "extra": {}}))
 	var loaded11: Dictionary = sm.call("load_game")
-	_check(int(loaded11.get("save_version", 0)) == 13, "v9 fixture stamped to v13")
+	_check(int(loaded11.get("save_version", 0)) == 14, "v9 fixture stamped to v14")
 	_check(((loaded11.get("engine", {}) as Dictionary).get("qi") as Dictionary).has("m"), "v9->v10 qi stored as Big dict")
 	_check(ge.call("qi_num") == 4242.0, "v9 qi preserved across migration")
 	_check(ge.call("earned_num") == 500.0, "v9 earnings preserved across migration")
@@ -285,7 +285,7 @@ func _initialize() -> void:
 		"offline_mortality": "vigil"}
 	_write(SLOT, JSON.stringify({"save_version": 10, "engine": v10eng, "extra": {}}))
 	var loaded12: Dictionary = sm.call("load_game")
-	_check(int(loaded12.get("save_version", 0)) == 13, "v10 fixture stamped to v13")
+	_check(int(loaded12.get("save_version", 0)) == 14, "v10 fixture stamped to v14")
 	_check(not bool(ge.get("coach_done")), "v10->v11 coach defaults unseen")
 	_check(ge.call("qi_num") == 4242.0, "v10 qi preserved across migration")
 
