@@ -37,7 +37,7 @@ offset_bottom = 48.0
 
 [node name="TopBarBox" parent="UI/Root/TopBar" type="HBoxContainer"]
 layout_mode = 2
-theme_override_constants/separation = 8
+theme_override_constants/separation = 4
 
 [node name="RealmLabel" parent="UI/Root/TopBar/TopBarBox" type="Label"]
 layout_mode = 2
@@ -64,6 +64,18 @@ text = "Mind —"
 [node name="SeasonLabel" parent="UI/Root/TopBar/TopBarBox" type="Label"]
 layout_mode = 2
 text = "Season —"
+
+[node name="StageLabel" parent="UI/Root/TopBar/TopBarBox" type="Label"]
+layout_mode = 2
+text = "Stage —"
+
+[node name="RateLabel" parent="UI/Root/TopBar/TopBarBox" type="Label"]
+layout_mode = 2
+text = "Rate —"
+
+[node name="ActivityLabel" parent="UI/Root/TopBar/TopBarBox" type="Label"]
+layout_mode = 2
+text = "Activity —"
 
 [node name="BottomDock" parent="UI/Root" type="PanelContainer"]
 anchor_top = 1.0

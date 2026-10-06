@@ -365,10 +365,11 @@ func leyline_next() -> Dictionary:
 	## The next sealed channel, or {} when all eight stand open.
 	return leyline_entry(leyline_open)
 
-func attune_next() -> Dictionary:
-	## 0.26b: open the next ley-line channel (node modal calls this).
-	## Sequential; refuses warded-style naming the gap (floor or qi).
-	## Returns {ok, reason, line} — reason is one of ok/sealed/floor/qi.
+func leyline_attune_ready() -> Dictionary:
+	## 0.27b: dry-run twin of attune_next (P3.1). Same checks, zero
+	## mutation — returns the SAME reason taxonomy the mutating path
+	## would refuse with, so the node shimmer and the modal can never
+	## disagree. Reason is one of ok/sealed/floor/qi.
 	var entry: Dictionary = leyline_next()
 	if entry.is_empty():
 		return {"ok": false, "reason": "sealed", "line": "All eight channels stand open."}
@@ -378,10 +379,21 @@ func attune_next() -> Dictionary:
 	var cost: float = float(entry.get("cost", 0.0))
 	if BN.of(qi).lt(BN.from_float(cost)):
 		return {"ok": false, "reason": "qi", "line": "Attuning the %s demands %d qi (held %d)." % [str(entry.get("name", "channel")), int(cost), int(BN.of(qi).to_float())]}
+	return {"ok": true, "reason": "ok", "open": leyline_open + 1, "line": "The %s opens — qi flows freer (x%.2f)." % [str(entry.get("name", "channel")), 1.0 + LEYLINE_STEP_MULT * float(leyline_open + 1)]}
+
+func attune_next() -> Dictionary:
+	## 0.26b: open the next ley-line channel (node modal calls this).
+	## Sequential; refuses warded-style naming the gap (floor or qi).
+	## Resolves through leyline_attune_ready — the verdict is single-sourced.
+	var probe: Dictionary = leyline_attune_ready()
+	if not bool(probe.get("ok", false)):
+		return probe
+	var cost: float = float(leyline_next().get("cost", 0.0))
 	qi = BN.of(qi).minus(BN.from_float(cost))
 	leyline_open += 1
 	_recompute_rate()
-	return {"ok": true, "reason": "ok", "open": leyline_open, "line": "The %s opens — qi flows freer (x%.2f)." % [str(entry.get("name", "channel")), leyline_mult()]}
+	probe["open"] = leyline_open
+	return probe
 
 func _crossed_tier(from_realm: int, to_realm: int) -> bool:
 	## True when a crossing moved across a macro-tier boundary.
@@ -713,6 +725,29 @@ func _guardian_def(id: String) -> Dictionary:
 func guardian_defeated(id: String) -> bool:
 	return str(id) != "" and (guardians.get("defeated", []) as Array).has(id)
 
+func guardian_challengeable(gid: String = "") -> bool:
+	## 0.27b: per-flame challengeability boolean (P3.3). "" wraps the
+	## current gate (non-empty = some warden bars the way); with an id,
+	## true only for the presently-gating undefeated warden. False never
+	## implies loss — duels remain ceremony (P2 scope cut, ADR-001 wall).
+	var gate: Dictionary = guardian_gate()
+	if str(gid) == "":
+		return not gate.is_empty()
+	if gate.is_empty() or str(gate.get("id", "")) != str(gid):
+		return false
+	return not guardian_defeated(gid)
+
+const DEN_ACCEPT_RATIO := 0.25
+
+func den_challengeable(beast_id: String) -> bool:
+	## 0.27b: thin wrapper over skirmish_stats naming the accept threshold
+	## (P3.2, P1 spec correction). The den pulse keys to this — the same
+	## line _try_den enforces — so display and verdict cannot drift.
+	var st: Dictionary = skirmish_stats(beast_id)
+	if not bool(st.get("ok", false)):
+		return false
+	return float(st.get("cult_dmg", 0.0)) / maxf(float(st.get("beast_power", 1.0)), 0.001) >= DEN_ACCEPT_RATIO
+
 func guardian_gate() -> Dictionary:
 	## Returns {"blocked": true, "id":, "name":, "tier":} when the current
 	## realm is the last of its macro tier and that tier's guardian stands
@@ -987,6 +1022,11 @@ func realm_label() -> String:
 		return "Realm %d (%s)" % [realm_index, layer]
 	var e: Dictionary = _realm_table[realm_index]
 	return "R%d %s (%s, %s)" % [realm_index, str(e.get("name", "?")), str(e.get("macro_name", "?")), layer]
+
+func stage_name() -> String:
+	## 0.27b: within-realm layer for the HUD stage slot. Purely derived
+	## (fill fraction), no stored state — same source as realm_label.
+	return str(LAYER_NAMES[layer_index_for(qi_num(), bottleneck_num())])
 
 func set_reveal_rules(rules: Array) -> void:
 	## P21: tab-unlock table injected by caller (Main) from data/reveal.json.
@@ -1764,6 +1804,11 @@ func due_hints() -> Array:
 		["hint_duties", disciples.size() >= 1 and _all_idle()],
 		["hint_gear", int(_gear_levels()) == 0 and BN.of(qi).ge(100.0)],
 		["hint_legacy", total_rebirths >= 1 and (techniques.size() + (gear as Dictionary).size() + (beasts as Dictionary).size()) > 0],
+		# 0.27b: world verbs, derived from existing persisted state only
+		# (no new machinery, no migration — hints_seen absorbs new ids).
+		["hint_walk", realm_index >= 1 and (nodes_visited as Array).is_empty()],
+		["hint_den", realm_index >= 2 and (beasts as Dictionary).is_empty()],
+		["hint_shrine", realm_index >= 7 and (guardians.get("attempts", {}) as Dictionary).is_empty()],
 	]
 	for pair in debts:
 		var hid: String = str(pair[0])

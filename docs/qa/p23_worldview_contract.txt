@@ -24,6 +24,10 @@ func _on_root_resized() -> void:
 func _sync_viewport_size() -> void:
 func _process(delta: float) -> void:
 func _poll_engine() -> void:
+func node_affordance() -> String:
+func den_affordance(beast_id: String) -> String:
+func shrine_affordance(gid: String) -> String:
+func _update_affordances() -> void:
 func _unshaded(c: Color, emission_energy: float = 0.0) -> StandardMaterial3D:
 func _sprite_node(tex: Texture2D, pos: Vector3, pixel: float = 0.01) -> Sprite3D:
 func _flat_mat(c: Color) -> StandardMaterial3D:

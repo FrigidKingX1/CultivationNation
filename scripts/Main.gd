@@ -422,6 +422,7 @@ func _wire_buttons() -> void:
 	var tabs: Node = get_node_or_null("UI/Root/SidePanel/PanelScroll/PanelTabs")
 	if tabs != null and tabs.has_signal("tab_changed") and not (tabs as TabContainer).tab_changed.is_connected(_on_tab_changed):
 		(tabs as TabContainer).tab_changed.connect(_on_tab_changed)
+	_mark_archive_tabs()
 	_connect_btn("UI/Root/ChroniclePanel/ChronicleBox/FilterBox/FilterAllBtn", _on_filter.bind("all"))
 	_connect_btn("UI/Root/ChroniclePanel/ChronicleBox/FilterBox/FilterInfoBtn", _on_filter.bind("info"))
 	_connect_btn("UI/Root/ChroniclePanel/ChronicleBox/FilterBox/FilterWarnBtn", _on_filter.bind("warn"))
@@ -1850,7 +1851,28 @@ const HINTS: Dictionary = {
 	"hint_duties": "Idle hands learn nothing. Give your disciples duties.",
 	"hint_gear": "Qi to spare? Refine your kit at the forge.",
 	"hint_legacy": "Death kept what mattered. The rest begins again.",
+	# 0.27b: the world verbs (Q52). Triggers live in due_hints; text only here.
+	"hint_walk": "The grounds are walkable - WASD moves the cultivator, E interacts with what glows.",
+	"hint_den": "Beasts lair in the wilds - right-click a lit den to challenge it.",
+	"hint_shrine": "A warden bars the tier's end - its shrine flame burns tall. Face it there.",
 }
+
+func _mark_archive_tabs() -> void:
+	## 0.27b: archive emphasis (Q51, presentational only). World-duplicated
+	## surfaces gain archive tooltips pointing at the live world verb; all
+	## nine tabs remain, titles/count/order/depth untouched.
+	var tabs: TabContainer = get_node_or_null("UI/Root/SidePanel/PanelScroll/PanelTabs") as TabContainer
+	if tabs == null:
+		return
+	var notes: Dictionary = {
+		"Beasts": "Archive of hunts and duels. Live challenge happens at the wilds' dens (right-click).",
+		"Deeds": "Archive of completed deeds.",
+		"Records": "Archive of lives lived.",
+	}
+	for i in range(tabs.get_tab_count()):
+		var title: String = str(tabs.get_tab_title(i))
+		if notes.has(title):
+			tabs.set_tab_tooltip(i, str(notes.get(title)))
 
 func _poll_hints() -> void:
 	var ge: Node = get_node("/root/GameEngine")

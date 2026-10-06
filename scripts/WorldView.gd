@@ -236,6 +236,65 @@ func _poll_engine() -> void:
 	_poll_world_state()
 	_poll_tribulation()
 	_poll_representation()
+	_update_affordances()
+
+const THEME: GDScript = preload("res://scripts/UITheme.gd")
+
+# 0.27b affordance states (P4 truth table). Pure engine-truth mappings to
+# "ready"/"dormant" — the shimmer/pulse/flame can only ever tell the
+# truth the getters return. Rendering (both skins) verified by 0.27c
+# screenshot probes; the suite asserts these mappings, not pixels.
+func node_affordance() -> String:
+	var ge := _engine()
+	if ge == null:
+		return "dormant"
+	return "ready" if bool((ge.call("leyline_attune_ready") as Dictionary).get("ok", false)) else "dormant"
+
+func den_affordance(beast_id: String) -> String:
+	var ge := _engine()
+	if ge == null:
+		return "dormant"
+	return "ready" if bool(ge.call("den_challengeable", str(beast_id))) else "dormant"
+
+func shrine_affordance(gid: String) -> String:
+	## Boolean only (P2 scope cut): challengeable flame or not. False never
+	## implies loss — ceremony, not forecast.
+	var ge := _engine()
+	if ge == null:
+		return "dormant"
+	return "ready" if bool(ge.call("guardian_challengeable", str(gid))) else "dormant"
+
+var _mat_node_ready: StandardMaterial3D = null
+var _mat_node_idle: StandardMaterial3D = null
+
+func _update_affordances() -> void:
+	## 0.27b: the world speaks. Applies the three affordance booleans onto
+	## existing nodes only (material swaps, sprite modulate, flame scale) —
+	## no new nodes, no new polling path. Idempotent per call, headless-safe.
+	var ge := _engine()
+	if ge == null:
+		return
+	if _mat_node_ready == null:
+		_mat_node_ready = _unshaded(THEME.AFFORD_READY, 2.5)
+		_mat_node_idle = _unshaded(Color(0.85, 0.66, 0.22), 1.5)
+	var ns: String = node_affordance()
+	if _node_marks != null:
+		for m in _node_marks.get_children():
+			(m as MeshInstance3D).material_override = _mat_node_ready if ns == "ready" else _mat_node_idle
+	if _beast_row != null:
+		for spr in _beast_row.get_children():
+			var bid: String = str((spr as Node3D).get_meta("beast_id", ""))
+			(spr as Sprite3D).modulate = Color(1, 1, 1, 1) if den_affordance(bid) == "ready" else Color(0.45, 0.47, 0.52, 1)
+	for zid in _islands:
+		var n: Node = _islands.get(zid) as Node
+		if n == null:
+			continue
+		for fname in ["ShrineFlame", "SentinelFlame"]:
+			var f: MeshInstance3D = n.get_node_or_null(fname) as MeshInstance3D
+			if f == null:
+				continue
+			var s: float = 1.4 if shrine_affordance(str(f.get_meta("guardian_id", ""))) == "ready" else 1.0
+			f.scale = Vector3(1.0, s, 1.0)
 
 # --- P14-3: cultivator rig, aura, attachments, readiness ring ---
 var _cultivator: Node3D = null
@@ -615,8 +674,10 @@ func _try_den(beast_id: String) -> void:
 	var st: Dictionary = ge.call("skirmish_stats", str(beast_id))
 	if not bool(st.get("ok", false)):
 		return
-	var ratio: float = float(st.get("cult_dmg", 0.0)) / maxf(float(st.get("beast_power", 1.0)), 0.001)
-	if ratio < 0.25:
+	# 0.27b: threshold single-sourced in den_challengeable (P1/P3.2) —
+	# unknown beasts keep the silent return above; the ratio line below
+	# cannot drift from the pulse.
+	if not bool(ge.call("den_challengeable", str(beast_id))):
 		_den_outcome = {"beast": str(beast_id), "accepted": false}
 		_avatar_state = "idle"
 		return
@@ -873,12 +934,15 @@ func _try_node_or_leyline() -> void:
 	## 0.26b: interact routing at a node marker — when a sealed channel
 	## remains and its realm floor is met, queue the ley-line modal for
 	## Main (attune / meditate / leave); otherwise meditate as before.
-	## Below-floor and fully-open states keep the existing path untouched.
+	## 0.27b: gated on leyline_attune_ready (P3.1) — floor met AND qi
+	## cover the cost, per the 0.26b ADR condition. Below-affordable and
+	## fully-open states keep the existing meditate path untouched, and
+	## the shimmer and the modal can never disagree (P4 agreement).
 	var ge := _engine()
 	if ge != null:
-		var next: Dictionary = ge.call("leyline_next")
-		if not next.is_empty() and int(ge.get("realm_index")) >= int(next.get("floor", 0)) and avatar_near_node() != "":
-			_leyline_request = str(next.get("id", ""))
+		var ready: Dictionary = ge.call("leyline_attune_ready")
+		if bool(ready.get("ok", false)) and avatar_near_node() != "":
+			_leyline_request = str((ge.call("leyline_next") as Dictionary).get("id", ""))
 			_avatar_state = "idle"
 			return
 	_try_meditate()

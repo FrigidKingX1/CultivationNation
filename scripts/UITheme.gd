@@ -16,6 +16,11 @@ const GOLD := Color(0.85, 0.66, 0.22, 1.0)
 const JADE := Color(0.40, 0.80, 0.60, 1.0)
 const CINDER := Color(0.88, 0.33, 0.27, 1.0)
 const MIST := Color(0.54, 0.58, 0.65, 1.0)
+# 0.27b affordance tokens: the world announces what it offers. READY is
+# lit jade-gold (actionable now); DORMANT is cold stone (not yet). Both
+# skins read these tokens — no per-skin fork.
+const AFFORD_READY := Color(0.62, 1.0, 0.72, 1.0)
+const AFFORD_DORMANT := Color(0.38, 0.40, 0.46, 1.0)
 
 const FONT_DISPLAY := "res://fonts/MaShanZheng-Regular.ttf"
 const FONT_BODY := "res://fonts/Inter-Regular.ttf"

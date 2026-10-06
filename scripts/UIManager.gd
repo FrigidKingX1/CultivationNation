@@ -92,7 +92,7 @@ func apply_width(w: float) -> void:
 	## labels hide under 700px). Same path live resize uses; directly
 	## unit-testable without a display driver.
 	_narrow = w < 700.0
-	for n in ["MindLabel", "SeasonLabel"]:
+	for n in ["MindLabel", "SeasonLabel", "StageLabel", "ActivityLabel"]:
 		var lab: Label = get_node_or_null("Root/TopBar/TopBarBox/" + n) as Label
 		if lab != null:
 			lab.visible = not _narrow
@@ -182,6 +182,17 @@ func _refresh_topbar(ge: Node, st: Dictionary) -> void:
 	_lbl("Root/TopBar/TopBarBox/QiLabel", "%s/%s" % [BN.format_any(st.get("qi", 0.0)), BN.format_any(st.get("qi_bottleneck", 120.0))])
 	_lbl("Root/TopBar/TopBarBox/MindLabel", str(ge.call("mind_stage_name")))
 	_lbl("Root/TopBar/TopBarBox/SeasonLabel", str(ge.call("season_label")))
+	# 0.27b HUD completion (Q50): stage + rate + activity for world play.
+	# All read-only accessors; presence suffix comes engine-side (runtime
+	# state, never saved) — no view dependency from the HUD.
+	_lbl("Root/TopBar/TopBarBox/StageLabel", str(ge.call("stage_name")))
+	_lbl("Root/TopBar/TopBarBox/RateLabel", "%s/tick" % BN.format_hybrid(float(ge.call("rate_num"))))
+	var act: String = str(ge.get("player_focus")).capitalize()
+	if act == "":
+		act = "Cultivate"
+	if bool(ge.call("is_presence_active")):
+		act += " · Meditating"
+	_lbl("Root/TopBar/TopBarBox/ActivityLabel", act)
 	var bar: ProgressBar = get_node_or_null("Root/TopBar/TopBarBox/QiBar") as ProgressBar
 	if bar != null:
 		var bq = BN.of(st.get("qi_bottleneck", 120.0))
