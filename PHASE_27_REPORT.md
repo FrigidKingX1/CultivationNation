@@ -18,8 +18,10 @@ re-deferred at the 0.24.0 gate, physical at last).
   PASS. Second half negative (ring-reuse signature); soak bot never
   attunes and the modal never instantiates, so the trajectory is the
   expected default-inert determinism signature (fresh run confirmed).
-- PCK: 12,644,208 (0.25.0) → **12,649,564** (delta +5,356 — leyline
+- PCK: 12,644,208 (0.25.0) → **12,649,580** (delta +5,372 — leyline
   engine, node modal, channels table; tests/tools/docs excluded).
+  Re-exported after the version bump (V3 pretag: first export predated
+  the 0.26.0 stamp by ~1 min; +16 bytes is the baked version string).
   Trio verified (exe+pck+dll). Docs/* remains excluded.
 - R-S16: report + DECISIONS + v14 evidence + version 0.26.0 in ONE
   commit; tag + push on confirms.
