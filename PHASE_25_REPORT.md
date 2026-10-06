@@ -70,7 +70,7 @@ weaken the wire — manual-opt-in is opt-in with its own recorded bands.
   environmental-presumptive per the amended policy (same-tree PASS on
   record, zero tick-path mechanism). SHIP REQUIRES bench green on
   verified-idle iron; recorded below before tag.
-- Bench on verified-idle iron: (below — gate for tag).
+- Bench on verified-idle iron: 28.9% load recorded immediately prior, 50k ticks complete <5s PASS, exit 0. Ship gate satisfied; tag applied.
 - 480s plateau: delta(0→240s) +139, delta(240→480s) −270, verdict
   green; gate max(150, 25% × 139)=150. Bounded plateaus now three
   releases running (0.23.0: +286/−39).
