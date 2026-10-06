@@ -43,6 +43,19 @@ func _poll_avatar(dt: float) -> void:
 func _try_interact() -> void:
 func _try_den(beast_id: String) -> void:
 func take_den_outcome() -> Dictionary:
+func avatar_fight_state() -> String:
+func avatar_fight(beast_id: String) -> Dictionary:
+func avatar_strike(at_msec: int = -1) -> Dictionary:
+func _in_reach() -> String:
+func take_fight_outcome() -> Dictionary:
+func _resolve_fight(won: bool) -> Dictionary:
+func _grant_fight_rewards() -> void:
+func _avatar_knockback() -> void:
+func _build_fight_hud() -> void:
+func _hud_bar(bar_name: String, color: Color) -> MeshInstance3D:
+func _hud_text(text_name: String) -> Label3D:
+func _free_fight_hud() -> void:
+func _update_fight_hud() -> void:
 func _break_meditation() -> void:
 func _try_meditate() -> void:
 func _update_follow() -> void:

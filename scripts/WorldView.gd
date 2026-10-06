@@ -144,6 +144,8 @@ func _unhandled_input(event: InputEvent) -> void:
 		elif b == MOUSE_BUTTON_WHEEL_DOWN:
 			_orbit_dist = clampf(_orbit_dist + 2.0, 8.0, 60.0)
 			_update_camera()
+		elif b == MOUSE_BUTTON_RIGHT and str(avatar_fight_state()) == "fighting":
+			avatar_strike()
 	elif event is InputEventKey and (event as InputEventKey).pressed and not (event as InputEventKey).echo:
 		if (event as InputEventKey).physical_keycode == KEY_F12:
 			_fly_debug = not _fly_debug
@@ -600,15 +602,21 @@ func _try_interact() -> void:
 	_try_meditate()
 
 func _try_den(beast_id: String) -> void:
-	## P25a: den challenge entry. Below-strength beasts refuse warded-style
-	## (same hunt_yield_mult rule the stalk path reads — R13, no duplicate
-	## logic). Accepted challenges stage the beast id; the exchange loop
-	## lands in P25b. Main voices both outcomes via take_den_outcome().
+	## P25b: den challenge entry. Refusal below quarter strength (power
+	## ratio under 0.25, read off skirmish_stats — R13, no duplicate
+	## logic); the accepted 0.25+ band includes losable underdog fights,
+	## which is what makes manual outcomes meaningful. Accepted challenges
+	## stage the beast id; the exchange loop resolves them below.
+	## (P25a refused below parity; the P25b loop needs the wider band.)
 	_challenge_beast = ""
 	var ge := _engine()
 	if ge == null or str(beast_id) == "":
 		return
-	if float(ge.call("hunt_yield_mult", str(beast_id))) < 1.0:
+	var st: Dictionary = ge.call("skirmish_stats", str(beast_id))
+	if not bool(st.get("ok", false)):
+		return
+	var ratio: float = float(st.get("cult_dmg", 0.0)) / maxf(float(st.get("beast_power", 1.0)), 0.001)
+	if ratio < 0.25:
 		_den_outcome = {"beast": str(beast_id), "accepted": false}
 		_avatar_state = "idle"
 		return
@@ -623,6 +631,218 @@ func take_den_outcome() -> Dictionary:
 	var out: Dictionary = _den_outcome
 	_den_outcome = {}
 	return out
+
+# --- P25b: manual skirmish (Q34-C design: docs/adr/P25_COMBAT_DESIGN.md) ---
+# Shared gated clock: ONE combat tick elapses per landed attack, up to
+# TEMPO_CLAMP_TPS ticks/sec. No attack -> no tick -> BOTH sides frozen:
+# tempo gates delivery speed only. Same stats + same input trace ->
+# identical outcome (tested). Wall-clock duration = ticks / tempo.
+# R-S7: BONUS_TEMPO_FRAC is a fraction of the tempo clamp (dimensionless);
+# BONUS_XP is technique XP (existing economy unit, Q35 via existing API).
+const TEMPO_CLAMP_TPS := 2.5
+const BONUS_TEMPO_FRAC := 0.8
+const BONUS_XP := 100
+var _fight: Dictionary = {}
+var _fight_outcome: Dictionary = {}
+var _fight_hud: Node3D = null
+var _fight_beast_bar: MeshInstance3D = null
+var _fight_self_bar: MeshInstance3D = null
+var _fight_beast_label: Label3D = null
+var _fight_self_label: Label3D = null
+
+func avatar_fight_state() -> String:
+	## idle | fighting | won | lost. Won/lost persist until consumed by
+	## take_fight_outcome() or a new challenge starts.
+	return str(_fight.get("phase", "idle"))
+
+func avatar_fight(beast_id: String) -> Dictionary:
+	## Open a manual skirmish. Requires a staged challenge for the same
+	## beast (P25a entry); refused or busy otherwise. Initializes HP from
+	## skirmish_stats and stages the HUD. No ticks elapse here.
+	if str(beast_id) == "" or str(beast_id) != str(_challenge_beast):
+		return {"ok": false, "reason": "no_challenge"}
+	if str(avatar_fight_state()) == "fighting":
+		return {"ok": false, "reason": "busy"}
+	var ge := _engine()
+	if ge == null:
+		return {"ok": false, "reason": "no_engine"}
+	var st: Dictionary = ge.call("skirmish_stats", str(beast_id))
+	if not bool(st.get("ok", false)):
+		return {"ok": false, "reason": "no_stats"}
+	_fight = {
+		"phase": "fighting", "beast": str(beast_id),
+		"beast_hp": float(st.get("beast_hp", 1.0)),
+		"beast_max": float(st.get("beast_hp", 1.0)),
+		"self_hp": float(st.get("player_hp", 1.0)),
+		"self_max": float(st.get("player_hp", 1.0)),
+		"cult_dmg": float(st.get("cult_dmg", 1.0)),
+		"beast_tick": float(st.get("beast_tick", 1.0)),
+		"ticks": 0, "landed": 0,
+		"first_msec": -1, "last_msec": -1,
+	}
+	_build_fight_hud()
+	_update_fight_hud()
+	return {"ok": true, "phase": "fighting"}
+
+func avatar_strike(at_msec: int = -1) -> Dictionary:
+	## One player attack. Tempo clamp (min interval), range check, then
+	## exactly ONE combat tick: both sides deal simultaneously, cultivator
+	## first (a killing blow lands before the answer). Returns the tick
+	## result; resolution sets take_fight_outcome() for Main's poll.
+	if str(avatar_fight_state()) != "fighting":
+		return {"ok": false, "reason": "not_fighting"}
+	var now: int = at_msec if at_msec >= 0 else int(Time.get_ticks_msec())
+	var last: int = int(_fight.get("last_msec", -1))
+	var min_gap: int = int(1000.0 / TEMPO_CLAMP_TPS)
+	if last >= 0 and now - last < min_gap:
+		return {"ok": false, "reason": "tempo"}
+	if _in_reach() != "":
+		return {"ok": false, "reason": "range"}
+	_fight["ticks"] = int(_fight.get("ticks", 0)) + 1
+	_fight["landed"] = int(_fight.get("landed", 0)) + 1
+	if int(_fight.get("first_msec", -1)) < 0:
+		_fight["first_msec"] = now
+	_fight["last_msec"] = now
+	_fight["beast_hp"] = float(_fight.get("beast_hp", 0.0)) - float(_fight.get("cult_dmg", 0.0))
+	if float(_fight.get("beast_hp", 0.0)) <= 0.0:
+		return _resolve_fight(true)
+	_fight["self_hp"] = float(_fight.get("self_hp", 0.0)) - float(_fight.get("beast_tick", 0.0))
+	if float(_fight.get("self_hp", 0.0)) <= 0.0:
+		return _resolve_fight(false)
+	_update_fight_hud()
+	return {"ok": true, "phase": "fighting", "ticks": int(_fight.get("ticks", 0))}
+
+func _in_reach() -> String:
+	## "" when the avatar stands within reach of the challenged den;
+	## otherwise a short reason. Range is the skirmish reach scale.
+	if _cultivator == null:
+		return "no_avatar"
+	var ge := _engine()
+	if ge == null:
+		return "no_engine"
+	var st: Dictionary = ge.call("skirmish_stats", str(_fight.get("beast", "")))
+	var reach: float = float(st.get("reach", 6.0))
+	var ap: Vector3 = _cultivator.global_position
+	for m in _beast_row.get_children():
+		if str(m.get_meta("beast_id", "")) != str(_fight.get("beast", "")):
+			continue
+		var mp: Vector3 = (m as Node3D).global_position
+		if Vector2(mp.x - ap.x, mp.z - ap.z).length() <= reach:
+			return ""
+	return "far"
+
+func take_fight_outcome() -> Dictionary:
+	## One-shot consume for Main's poll: voices wins and losses.
+	var out: Dictionary = _fight_outcome
+	_fight_outcome = {}
+	return out
+
+func _resolve_fight(won: bool) -> Dictionary:
+	var ge := _engine()
+	var out := {"ok": true, "win": won, "phase": "won" if won else "lost"}
+	if won:
+		_grant_fight_rewards()
+	_fight["phase"] = "won" if won else "lost"
+	if not won:
+		_avatar_knockback()
+	_free_fight_hud()
+	_fight_outcome = out
+	_challenge_beast = ""
+	return out
+
+func _grant_fight_rewards() -> void:
+	## Win rewards flow through the EXISTING hunt path: the zone's map
+	## node carrying this beast (node yield + marks + forage + mind rules
+	## exactly as one auto-kill), else hunt_tick directly. Then the Q35
+	## technique-XP bonus via the EXISTING XP API — conditional on tempo
+	## quality (avg landed tempo >= BONUS_TEMPO_FRAC of clamp).
+	var ge := _engine()
+	if ge == null:
+		return
+	var bid: String = str(_fight.get("beast", ""))
+	var node_id: String = ""
+	for n in (ge.get("map_nodes") as Array):
+		if str((n as Dictionary).get("beast_id", "")) == bid:
+			node_id = str((n as Dictionary).get("id", ""))
+			break
+	if node_id != "":
+		ge.call("hunt_at", node_id, 1)
+	else:
+		ge.call("hunt_tick", bid, 1)
+	var elapsed: float = maxf(float(int(_fight.get("last_msec", 0)) - int(_fight.get("first_msec", 0))) / 1000.0, 0.001)
+	var tempo: float = float(_fight.get("landed", 0)) / elapsed
+	if tempo >= BONUS_TEMPO_FRAC * TEMPO_CLAMP_TPS:
+		var art: String = str(ge.get("focus_technique"))
+		if art != "":
+			ge.call("train_technique", art, BONUS_XP)
+
+func _avatar_knockback() -> void:
+	## Q37=A: defeat displaces to the zone entrance. Nothing else — no
+	## death, no lifespan hit, no spiral, no qi cost.
+	var entry: Dictionary = _zone_entry(_zone if _zone != "" else "Dewfield")
+	var spawn: Array = ((entry.get("spawn", {}) as Dictionary).get("pos", [0.0, 0.0, 0.0]) as Array)
+	if _cultivator != null:
+		_cultivator.position = Vector3(float(spawn[0]), 0.0, float(spawn[2])) + Vector3(0, 0, 2.0)
+	_avatar_state = "idle"
+
+func _build_fight_hud() -> void:
+	_free_fight_hud()
+	_fight_hud = Node3D.new()
+	_fight_hud.name = "FightHud"
+	add_child(_fight_hud)
+	_fight_beast_bar = _hud_bar("BeastHp", Color(0.9, 0.3, 0.25))
+	_fight_self_bar = _hud_bar("SelfHp", Color(0.4, 1.0, 0.5))
+	_fight_beast_label = _hud_text("BeastHpText")
+	_fight_self_label = _hud_text("SelfHpText")
+
+func _hud_bar(bar_name: String, color: Color) -> MeshInstance3D:
+	var bar := MeshInstance3D.new()
+	bar.name = bar_name
+	var bm := BoxMesh.new()
+	bm.size = Vector3(4.0, 0.25, 0.4)
+	bar.mesh = bm
+	bar.material_override = _unshaded(color, 1.5)
+	_fight_hud.add_child(bar)
+	return bar
+
+func _hud_text(text_name: String) -> Label3D:
+	var lab := Label3D.new()
+	lab.name = text_name
+	lab.font_size = 48
+	lab.pixel_size = 0.01
+	lab.no_depth_test = true
+	lab.billboard = BaseMaterial3D.BILLBOARD_ENABLED
+	lab.modulate = Color(1, 1, 1)
+	_fight_hud.add_child(lab)
+	return lab
+
+func _free_fight_hud() -> void:
+	if _fight_hud != null and is_instance_valid(_fight_hud):
+		remove_child(_fight_hud)
+		_fight_hud.queue_free()
+	_fight_hud = null
+	_fight_beast_bar = null
+	_fight_self_bar = null
+	_fight_beast_label = null
+	_fight_self_label = null
+
+func _update_fight_hud() -> void:
+	## HP bars ARE the engine's math, presented live (skirmish_stats in,
+	## bar fractions out — no separate numbers anywhere).
+	if _fight_hud == null or _fight.is_empty():
+		return
+	var anchor: Vector3 = _fx_anchor() + Vector3(0, 4.2, 0)
+	_fight_hud.position = anchor
+	var bf: float = clampf(float(_fight.get("beast_hp", 0.0)) / maxf(float(_fight.get("beast_max", 1.0)), 0.001), 0.0, 1.0)
+	var sf: float = clampf(float(_fight.get("self_hp", 0.0)) / maxf(float(_fight.get("self_max", 1.0)), 0.001), 0.0, 1.0)
+	_fight_beast_bar.position = Vector3(0, 0.6, 0)
+	_fight_beast_bar.scale = Vector3(maxf(bf, 0.001), 1.0, 1.0)
+	_fight_self_bar.position = Vector3(0, 0.0, 0)
+	_fight_self_bar.scale = Vector3(maxf(sf, 0.001), 1.0, 1.0)
+	_fight_beast_label.position = Vector3(0, 1.1, 0)
+	_fight_beast_label.text = "Foe %d/%d" % [maxi(int(_fight.get("beast_hp", 0.0)), 0), int(_fight.get("beast_max", 1.0))]
+	_fight_self_label.position = Vector3(0, -0.5, 0)
+	_fight_self_label.text = "Self %d/%d" % [maxi(int(_fight.get("self_hp", 0.0)), 0), int(_fight.get("self_max", 1.0))]
 
 func _break_meditation() -> void:
 	if _avatar_state == "meditate":

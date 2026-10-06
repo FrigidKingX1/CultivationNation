@@ -1939,6 +1939,16 @@ func _refresh_shrine_den() -> void:
 			else:
 				_log("Outmatched on those grounds — signs would halve. Drill first.", "warn")
 				_sfx("fail")
+	if world.has_method("take_fight_outcome"):
+		var fout: Dictionary = world.call("take_fight_outcome")
+		if not fout.is_empty():
+			if bool(fout.get("win", false)):
+				_log("Beast down. The grounds remember.", "realm")
+				_toast("Beast down", "realm")
+				_sfx("breakthrough")
+			else:
+				_log("Driven back to the zone mouth. No shame in retreating.", "warn")
+				_sfx("fail")
 
 func _refresh_coach() -> void:
 	## P21: first-session coach marks (godot-idle skeleton fitted to our

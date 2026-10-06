@@ -1504,6 +1504,13 @@ const SKIRMISH_REACH := 6.0
 const SKIRMISH_BEAST_CADENCE := 4
 const SKIRMISH_HP_BASE := 100.0
 const SKIRMISH_TEMPO_MIN := 0.4
+# P25b tick-model scales (R-S7): beast_hp = beast_power x HP_MULT hit
+# points; each landed attack deals cult_dmg while the beast answers with
+# beast_power x TICK_FRAC. Tuned so the loop verdict matches the parity
+# rule (win iff power ratio >= ~0.5; refusal below 0.25): both sides scale
+# with the same quantities, so the verdict is ladder-invariant.
+const SKIRMISH_HP_MULT := 10.0
+const SKIRMISH_TICK_FRAC := 0.25
 
 func skirmish_stats(beast_id: String) -> Dictionary:
 	## P25a: read-only additive getter for the manual arena. Pure function
@@ -1514,12 +1521,19 @@ func skirmish_stats(beast_id: String) -> Dictionary:
 		return {"ok": false}
 	var art: float = artifact_power_bonus()
 	var tech: float = technique_power_bonus(focus_technique) if focus_technique != "" else 1.0
+	var cult: float = (10.0 + art) * maxf(tech, 1.0)
+	# Player HP scales with the cultivator's OWN damage scale (not with
+	# rebirths or wealth): both sides of the tick math then scale with the
+	# same quantities, so the win/loss verdict is ladder-invariant —
+	# winnable at parity everywhere, losable in the 0.25–0.5 band.
 	return {
 		"ok": true,
 		"beast_power": bpower,
-		"cult_dmg": (10.0 + art) * maxf(tech, 1.0),
+		"cult_dmg": cult,
+		"beast_hp": bpower * SKIRMISH_HP_MULT,
+		"beast_tick": bpower * SKIRMISH_TICK_FRAC,
 		"beast_cadence_ticks": SKIRMISH_BEAST_CADENCE,
-		"player_hp": SKIRMISH_HP_BASE * (1.0 + 0.25 * float(total_rebirths)),
+		"player_hp": SKIRMISH_HP_BASE * maxf(cult / 10.0, 1.0),
 		"reach": SKIRMISH_REACH,
 		"tempo_min": SKIRMISH_TEMPO_MIN,
 	}

@@ -43,6 +43,9 @@ func _process(_delta: float) -> bool:
 		_test_refusal()
 		_test_challenge_entry()
 		_test_shrine_flow()
+		_test_invariance()
+		_test_loss()
+		_test_tempo_clamp()
 		_test_budgets()
 		if _failures == 0:
 			print("P25-TEST PASS")
@@ -177,3 +180,127 @@ func _test_budgets() -> void:
 	_check(int(w.call("count_nodes")) <= 160, "world node budget holds with arena")
 	var b: Dictionary = w.call("particle_budget")
 	_check(int(b.get("total", 9999)) <= 768, "total budget holds with arena")
+
+func _fight_at(w: Node, zone: String, beast_id: String = "") -> String:
+	## Walk to a zone, stand on the chosen den (first marker by default),
+	## interact, and open the skirmish. Rich coffers: repeat visits toll.
+	## Returns the challenged beast id ("" when refused).
+	_walk_to(w, zone)
+	var ge: Node = root.get_node("GameEngine")
+	ge.set("qi", 1.0e12)
+	var row: Node = w.get_node("BeastGrounds")
+	var target: Node3D = null
+	for m in row.get_children():
+		if beast_id == "" or str(m.get_meta("beast_id", "")) == beast_id:
+			target = m as Node3D
+			break
+	_check(target != null, "den staged for " + zone)
+	_stand_on(w, target.global_position)
+	Input.action_press("world_interact")
+	w.call("_poll_avatar", 0.25)
+	Input.action_release("world_interact")
+	w.call("take_den_outcome")
+	var bid: String = str(w.call("avatar_challenge"))
+	if bid == "":
+		return ""
+	var res: Dictionary = w.call("avatar_fight", bid)
+	if not bool(res.get("ok", false)):
+		return ""
+	return bid
+
+func _run_trace(w: Node, gaps: Array) -> Dictionary:
+	## Scripted input trace: strikes spaced by gap milliseconds.
+	## Deterministic by construction (synthetic timestamps). Returns the
+	## resolution result (win or loss), not the post-resolution tail.
+	var t: int = 1000000
+	var outcome: Dictionary = {}
+	for g in gaps:
+		t += int(g)
+		var r: Dictionary = w.call("avatar_strike", t)
+		if r.has("win"):
+			outcome = r
+	if outcome.is_empty():
+		outcome = w.call("avatar_strike", t + 100000)
+	return outcome
+
+func _test_invariance() -> void:
+	# P25b: same stats + same trace shape -> identical verdict and
+	# post-state; tempo shapes duration and the Q35 bonus ONLY. Fresh arts
+	# keep the fight multi-tick (one-shot fights can't separate tempos);
+	# qi is snapshotted AFTER setup so travel tolls can't confound it.
+	var w: Node = _world()
+	var ge: Node = root.get_node("GameEngine")
+	ge.set("realm_index", 0)
+	ge.set("techniques", {})
+	ge.set("focus_technique", "tech_stillwater")
+	var results: Array = []
+	for gaps in [
+		[400, 400, 400, 400, 400, 400, 400, 400],
+		[800, 800, 800, 800, 800, 800, 800, 800],
+		[2000, 2000, 400, 400, 400, 400, 400, 400],
+	]:
+		_fight_at(w, "Dewfield", "beast_reedlurker")
+		var q0: float = ge.call("qi_num")
+		var k0: int = int((ge.get("beasts") as Dictionary).get("beast_reedlurker", 0))
+		var x0: int = int((ge.get("techniques") as Dictionary).get("tech_stillwater", 0))
+		var last: Dictionary = _run_trace(w, gaps)
+		w.call("take_fight_outcome")
+		results.append({
+			"win": bool(last.get("win", false)),
+			"dkills": int((ge.get("beasts") as Dictionary).get("beast_reedlurker", 0)) - k0,
+			"dxp": int((ge.get("techniques") as Dictionary).get("tech_stillwater", 0)) - x0,
+			"dqi": ge.call("qi_num") - q0,
+		})
+	_check(bool(results[0].get("win", false)) and bool(results[1].get("win", false)) and bool(results[2].get("win", false)), "all tempo profiles win the parity fight")
+	_check(int(results[0].get("dkills", -1)) == int(results[1].get("dkills", -2)) and int(results[1].get("dkills", -2)) == int(results[2].get("dkills", -3)) and int(results[0].get("dkills", 0)) >= 1, "identical kill rewards across profiles")
+	_check(absf(float(results[0].get("dqi", 0.0))) < 0.001 and absf(float(results[1].get("dqi", 0.0))) < 0.001 and absf(float(results[2].get("dqi", 0.0))) < 0.001, "fights mint no qi in any profile")
+	_check(int(results[0].get("dxp", 0)) == 100, "max tempo earns the bonus")
+	_check(int(results[1].get("dxp", 0)) == 0 and int(results[2].get("dxp", 0)) == 0, "sloppy tempo earns no bonus")
+
+func _test_loss() -> void:
+	# Below-beast stats lose under EVERY profile; knockback to the zone
+	# entrance, no qi cost, no spiral. slagwing at fresh power sits in
+	# the losable band (ratio ~0.45: accepted, doomed).
+	var w: Node = _world()
+	var ge: Node = root.get_node("GameEngine")
+	ge.set("realm_index", 8)
+	ge.set("techniques", {})
+	ge.set("focus_technique", "")
+	var slow24: Array = []
+	for i in 24:
+		slow24.append(400)
+	var slowish: Array = []
+	for i in 24:
+		slowish.append(2000)
+	for gaps in [slow24, slowish]:
+		var q0: float = ge.call("qi_num")
+		var bid: String = _fight_at(w, "Ashbarrow", "beast_slagwing")
+		_check(bid == "beast_slagwing", "underdog challenge stages")
+		var last: Dictionary = _run_trace(w, gaps)
+		_check(not bool(last.get("win", true)), "underdog loses at any tempo")
+		_check(absf(ge.call("qi_num") - q0) < 0.001, "loss costs no qi")
+		w.call("take_fight_outcome")
+	var CDB: GDScript = load("res://scripts/ContentDB.gd")
+	var cdb: Node = CDB.new()
+	cdb.call("load_all")
+	var spawn := Vector3.ZERO
+	for z in (cdb.get("zones3d") as Array):
+		if str((z as Dictionary).get("id", "")) == "Ashbarrow":
+			var pos: Array = ((z as Dictionary).get("spawn", {}) as Dictionary).get("pos", [0.0, 0.0, 0.0])
+			spawn = Vector3(float(pos[0]), 0.0, float(pos[2]))
+	cdb.free()
+	var ap: Vector3 = (w.get_node("Cultivator") as Node3D).position
+	_check(Vector2(ap.x - spawn.x, ap.z - spawn.z).length() < 5.0, "knockback returns to the zone mouth")
+
+func _test_tempo_clamp() -> void:
+	var w: Node = _world()
+	var ge: Node = root.get_node("GameEngine")
+	ge.set("realm_index", 0)
+	_fight_at(w, "Dewfield")
+	var r1: Dictionary = w.call("avatar_strike", 1000000)
+	_check(bool(r1.get("ok", false)), "first strike lands")
+	var r2: Dictionary = w.call("avatar_strike", 1000100)
+	_check(not bool(r2.get("ok", true)) and str(r2.get("reason", "")) == "tempo", "mash inside the clamp rejected")
+	w.call("avatar_strike", 1001000)
+	w.call("avatar_strike", 1002000)
+	w.call("take_fight_outcome")

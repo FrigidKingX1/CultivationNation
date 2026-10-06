@@ -59,6 +59,22 @@ func _process(_delta: float) -> bool:
 		_frames = 0
 	elif _stage == 5 and _frames >= 50:
 		_snap("isle_tribulation")
+		_world().call("apply_zone", "Dewfield")
+		_stage = 6
+		_frames = 0
+	elif _stage == 6 and _frames >= 15:
+		var row: Node = _world().get_node("BeastGrounds")
+		(_world().get_node("Cultivator") as Node3D).global_position = (row.get_child(0) as Node3D).global_position
+		Input.action_press("world_interact")
+		_world().call("_poll_avatar", 0.25)
+		Input.action_release("world_interact")
+		_world().call("take_den_outcome")
+		_world().call("avatar_fight", "beast_pebbleback")
+		_world().call("avatar_strike", 1000000)
+		_stage = 7
+		_frames = 0
+	elif _stage == 7 and _frames >= 10:
+		_snap("arena_fight")
 		print("P23-SHOTS done")
 		quit(0)
 		return true
