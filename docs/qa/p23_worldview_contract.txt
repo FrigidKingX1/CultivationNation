@@ -29,6 +29,11 @@ func _sprite_node(tex: Texture2D, pos: Vector3, pixel: float = 0.01) -> Sprite3D
 func _flat_mat(c: Color) -> StandardMaterial3D:
 func _build_cultivator() -> void:
 func _poll_cultivator() -> void:
+func avatar_state() -> String:
+func avatar_move(dir: Vector2, dt: float = 0.016) -> void:
+func _engine_running() -> bool:
+func _poll_avatar(dt: float) -> void:
+func _update_follow() -> void:
 func _build_cloud_sea() -> void:
 func _load_zones() -> void:
 func _zone_entry(zone: String) -> Dictionary:

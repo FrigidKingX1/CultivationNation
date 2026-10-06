@@ -429,7 +429,7 @@ text = "Stalk [H]"
 
 [node name="WanderBtn" parent="UI/Root/BottomDock/DockRows/DockRow1" type="Button"]
 layout_mode = 2
-text = "Wander [W]"
+text = "Wander [V]"
 
 [node name="GearLabel" parent="UI/Root/SidePanel/PanelScroll/PanelTabs/Soul" type="Label"]
 layout_mode = 2

@@ -468,12 +468,19 @@ func _wire_buttons() -> void:
 # P21: rebindable actions (Maaack input options edit these live; the
 # player_config section persists them). Defaults mirror the legacy keys,
 # and handle_shortcut(keycode) stays as the test/stable path.
+# P24: 13 -> 19 actions. WASD movement needs W unambiguous, so the legacy
+# cult_wander default moves W -> V (rule-11: p11 shortcut + help/hint text
+# move with it; rebind-replacement semantics mean existing player configs
+# keep their stored keys). World actions below.
 const INPUT_DEFAULTS := {
 	"cult_breathe": [KEY_1], "cult_drill": [KEY_2], "cult_stalk": [KEY_3],
 	"cult_tribulation": [KEY_T], "cult_speed1": [KEY_7], "cult_speed10": [KEY_8],
 	"cult_speed100": [KEY_9], "cult_speed1000": [KEY_0], "cult_pause": [KEY_SPACE],
-	"cult_hunt": [KEY_H], "cult_wander": [KEY_W], "cult_mute": [KEY_M],
+	"cult_hunt": [KEY_H], "cult_wander": [KEY_V], "cult_mute": [KEY_M],
 	"cult_help": [KEY_F1],
+	"world_move_forward": [KEY_W], "world_move_back": [KEY_S],
+	"world_move_left": [KEY_A], "world_move_right": [KEY_D],
+	"world_interact": [KEY_E], "world_toggle_flight": [KEY_F],
 }
 
 func _register_input_actions() -> void:
@@ -544,10 +551,13 @@ func _wire_advanced_options() -> void:
 
 func _give_list_height(root_box: Node) -> void:
 	var stack: Array = [root_box]
+	# P24: the rebind list grows with the action count — claim ~24px per
+	# action row (Round 1 defect #5 guard: rows squeeze to zero without it).
+	var want_y: float = maxf(320.0, 24.0 * float(INPUT_DEFAULTS.size()))
 	while not stack.is_empty():
 		var n: Node = stack.pop_back()
 		if str(n.name) == "InputActionsList" and n is ScrollContainer:
-			(n as ScrollContainer).custom_minimum_size = Vector2(0, 320)
+			(n as ScrollContainer).custom_minimum_size = Vector2(0, want_y)
 			(n as Control).size_flags_vertical = Control.SIZE_EXPAND_FILL
 		for c in n.get_children():
 			stack.append(c)
@@ -621,7 +631,7 @@ func handle_shortcut(key: int) -> bool:
 			_on_pause_btn()
 		KEY_H:
 			_on_stalk()
-		KEY_W:
+		KEY_V:
 			_on_wander()
 		KEY_M:
 			_on_mute()
@@ -1517,10 +1527,13 @@ const SHORTCUTS := [
 	["7 / 8 / 9 / 0", "Speed 1x / 10x / 100x / 1000x"],
 	["Space", "Pause / resume"],
 	["H", "Stalk current grounds"],
-	["W", "Wander unwalked grounds"],
+	["V", "Wander unwalked grounds"],
 	["M", "Mute sound"],
 	["F1", "This help"],
 	["Esc", "Close panels / help"],
+	["W A S D", "Walk the world (panels closed)"],
+	["E", "Interact / meditate at touched points"],
+	["F", "Toggle sword-flight (once unlocked)"],
 ]
 
 func _tip(path: String, text: String) -> void:
@@ -1542,7 +1555,7 @@ func _apply_tooltips() -> void:
 	_tip("UI/Root/BottomDock/DockRows/DockRow1/FocusHunt", "Stalk: beast signs abroad, zero Qi, eases the heart. [3]")
 	_tip("UI/Root/BottomDock/DockRows/DockRow1/BreakthroughBtn", "Attempt when Qi fills. Readiness and forecast shown live. [T]")
 	_tip("UI/Root/BottomDock/DockRows/DockRow1/StalkBtn", "Stalk current grounds for signs. Weak hunts yield less. [H]")
-	_tip("UI/Root/BottomDock/DockRows/DockRow1/WanderBtn", "Walk rich unwalked grounds. First visits are free. [W]")
+	_tip("UI/Root/BottomDock/DockRows/DockRow1/WanderBtn", "Walk rich unwalked grounds. First visits are free. [V]")
 	_tip("UI/Root/BottomDock/DockRows/DockRow2/RecruitBtn", "Recruit a disciple for Qi. Cost capped at 8 fills.")
 	_tip("UI/Root/TopBar/TopBarBox/RealmLabel", "Current realm, macro tier, and within-realm layer.")
 	_tip("UI/Root/TopBar/TopBarBox/AgeLabel", "Age over realm-scaled lifespan. Death ends the life.")

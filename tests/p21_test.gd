@@ -330,10 +330,23 @@ func _test_settings_input() -> void:
 	fresh.pressed = true
 	_scene_main.call("_unhandled_key_input", fresh)
 	_check(str(ge2.get("player_focus")) == "cultivate", "rebound key fires")
-	_check(int(AppSettings.default_action_events.size()) == 13, "vendor reset snapshot seeded")
+	_check(int(AppSettings.default_action_events.size()) == 19, "vendor reset snapshot seeded")
 	AppSettings.reset_to_default_inputs()
 	var after_reset: Array = InputMap.action_get_events("cult_breathe")
 	_check(after_reset.size() == 1 and int((after_reset[0] as InputEventKey).physical_keycode) == KEY_1, "vendor reset restores defaults")
+	# P24 rule-11: 13 -> 19 actions; WASD movement needs unambiguous keys,
+	# so every default keycode must be distinct (wander moved W -> V).
+	var seen: Dictionary = {}
+	var dup: bool = false
+	for action in ["cult_breathe", "cult_drill", "cult_stalk", "cult_tribulation", "cult_speed1", "cult_speed10", "cult_speed100", "cult_speed1000", "cult_pause", "cult_hunt", "cult_wander", "cult_mute", "cult_help", "world_move_forward", "world_move_back", "world_move_left", "world_move_right", "world_interact", "world_toggle_flight"]:
+		for e in InputMap.action_get_events(str(action)):
+			var k: int = int((e as InputEventKey).physical_keycode)
+			if seen.has(k):
+				dup = true
+			seen[k] = true
+	_check(not dup and seen.size() == 19, "19 actions, collision-free defaults")
+	var wevs: Array = InputMap.action_get_events("cult_wander")
+	_check(wevs.size() == 1 and int((wevs[0] as InputEventKey).physical_keycode) == KEY_V, "wander default is V")
 	AppSettings.set_config_input_events("cult_breathe", [])
 	_scene_main.call("_register_input_actions")
 	# Options scenes instantiate (vendor UI gated from headless tree entry).

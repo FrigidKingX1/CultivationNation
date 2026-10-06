@@ -212,6 +212,8 @@ func _process(delta: float) -> void:
 			_focus_target.y = clampf(_focus_target.y, -500.0, 500.0)
 			_focus_target.z = clampf(_focus_target.z, -2000.0, 2000.0)
 			_update_camera()
+	_poll_avatar(delta)
+	_update_follow()
 	if _beast_row != null:
 		for spr in _beast_row.get_children():
 			if spr.has_meta("base_y") and spr is Node3D:
@@ -396,6 +398,72 @@ func _poll_cultivator() -> void:
 			_ready_ring_mat.albedo_color = Color(1.0, 0.8, 0.3)
 		else:
 			_ready_ring_mat.albedo_color = Color(1.0, 0.35, 0.3)
+
+# --- P24a: avatar presence (idle/walk; meditate/fly land in P24b) ---
+# The cultivator rig IS the avatar: robe tint + aura carry over, and
+# cultivator_screen() keeps projecting it (C1 return-space unchanged).
+var _avatar_state: String = "idle"
+const WALK_SPEED := 8.0
+
+func avatar_state() -> String:
+	## Headless-readable avatar state. P24a states: idle, walk.
+	return _avatar_state
+
+func avatar_move(dir: Vector2, dt: float = 0.016) -> void:
+	## Headless-testable movement primitive: walks the avatar on the
+	## active island, clamped to 90% of its radius. Direction is
+	## island-local XZ. Zero direction rests to idle.
+	if _cultivator == null:
+		return
+	var entry: Dictionary = _zone_entry(_zone if _zone != "" else "Dewfield")
+	var r: float = float(entry.get("size_radius", 200.0))
+	var spawn: Array = ((entry.get("spawn", {}) as Dictionary).get("pos", [0.0, 0.0, 0.0]) as Array)
+	var cx: float = float(spawn[0])
+	var cz: float = float(spawn[2])
+	if dir.length() < 0.01:
+		_avatar_state = "idle"
+		return
+	var p: Vector3 = _cultivator.position + Vector3(dir.x, 0.0, dir.y) * WALK_SPEED * maxf(dt, 0.0)
+	var flat := Vector2(p.x - cx, p.z - cz)
+	if flat.length() > r * 0.9:
+		flat = flat.normalized() * r * 0.9
+	_cultivator.position = Vector3(cx + flat.x, p.y, cz + flat.y)
+	_avatar_state = "walk"
+
+func _engine_running() -> bool:
+	var ge := _engine()
+	if ge == null:
+		return true
+	return bool(ge.get("running"))
+
+func _poll_avatar(dt: float) -> void:
+	## Live movement: WASD world actions while playing with panels closed.
+	## Same UIManager gating source as orbit input — one rule, two cameras.
+	if _ui_open() or not _engine_running():
+		if _avatar_state == "walk":
+			_avatar_state = "idle"
+		return
+	var dir := Vector2.ZERO
+	if Input.is_action_pressed("world_move_forward"):
+		dir.y -= 1.0
+	if Input.is_action_pressed("world_move_back"):
+		dir.y += 1.0
+	if Input.is_action_pressed("world_move_left"):
+		dir.x -= 1.0
+	if Input.is_action_pressed("world_move_right"):
+		dir.x += 1.0
+	avatar_move(dir.normalized() if dir.length() > 1.0 else dir, dt)
+
+func _update_follow() -> void:
+	## Follow camera during play; orbit framing (static island POI) while
+	## panels or modals are open.
+	if _cultivator == null:
+		return
+	if _ui_open():
+		_focus_on_island(_zone if _zone != "" else "Dewfield")
+	else:
+		_focus_target = _cultivator.global_position + Vector3(0, 4.0, 0)
+		_update_camera()
 
 # --- P23: floating zone islands (gray-box; dressing lands in P23b) ---
 var _cloud_sea: Node3D = null

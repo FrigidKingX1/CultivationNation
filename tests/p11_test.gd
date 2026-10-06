@@ -134,4 +134,6 @@ func _test_shortcuts() -> void:
 	_check(_shortcut(KEY_M) and bool(ge.get("muted")), "M: mute")
 	_check(_shortcut(KEY_M) and not bool(ge.get("muted")), "M: unmute")
 	ge.set("current_node", "")
-	_check(_shortcut(KEY_W) and str(ge.get("current_node")) != "", "W: wander walks")
+	# P24 rule-11: legacy wander default moved W -> V (W now walks the
+	# world); rebind-replacement semantics keep stored player keys intact.
+	_check(_shortcut(KEY_V) and str(ge.get("current_node")) != "", "V: wander walks")
