@@ -18,6 +18,17 @@ R-S14 Never run soaks concurrently with suites; long soaks are [CONFIRM]. (Q27)
 R-S16 Cross-file ledgers (report, DECISIONS, state.json, version) move
      together in ONE commit — phase-label collisions are renamed everywhere
      at once. (0.22.0)
+R-S18 When diagnosing suspected cyclic behavior, verify the sampling
+     interval does not alias with the cycle period; sample at multiple
+     non-harmonic intervals before trusting any trend. (0.25.0: a
+     ~4-tick demotion cycle is invisible to aligned samples.)
+R-S19 Phase labels are release-qualified (0.26a, 0.26b); bare P-numbers
+     are retired from cross-release references. (Second collision:
+     roadmap "P26 UI evolution" vs 0.25.0's P26a-c stakes phases.)
+R-S20 Every new test or diagnostic probe must demonstrate it can fail —
+     under a targeted fault, or by asserting its own write/read path —
+     before its green is trusted. (0.25.0: vacuous panel-freeze test;
+     cultivate-where-train probe edit.)
 
 ## Engineering
 R-S7  State your scale: every new power constant names its scale in-code. (0.21.0)
