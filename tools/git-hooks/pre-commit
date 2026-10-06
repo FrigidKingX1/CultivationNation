@@ -1,0 +1,21 @@
+#!/bin/sh
+# Cage hook: reject GDScript `//` comments (invalid syntax; use `#`).
+# Mirrors tests/p21_test.gd ratchet: strip URL schemes first, then match.
+# Installed to .git/hooks/pre-commit (see docs/agent/JOURNAL.md P5 entry).
+# Installed copy + this tracked source must stay identical.
+against=HEAD
+if ! git rev-parse --verify HEAD >/dev/null 2>&1; then
+	against=$(git hash-object -t tree /dev/null)
+fi
+bad=0
+for f in $(git diff --cached --name-only --diff-filter=ACM "$against" | grep '\.gd$'); do
+	if git show ":$f" | sed 's|://||g' | grep -n '//' >/dev/null; then
+		echo "CAGE: $f contains // outside URLs (GDScript uses #)" >&2
+		bad=1
+	fi
+done
+if [ "$bad" -ne 0 ]; then
+	echo "CAGE: commit rejected — replace // with # (URLs exempt)" >&2
+	exit 1
+fi
+exit 0

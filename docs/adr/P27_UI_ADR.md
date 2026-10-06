@@ -52,3 +52,44 @@ Audit closure (LICENSE F2 / attribution F3 / README F4 / CHANGELOG F10) +
 cage install (AGENTS.md + pre-commit `//` guard + docs/agent/JOURNAL.md —
 all three confirmed OPEN at the 0.27.0 gate) + CI. CI may split out as
 its own micro-release if it fights the theme work.
+
+## Amendment 1 — 0.27a tree-truth pins (auditor-signed)
+Inventory citations (byte-exact): rate_num:233, leyline_next:364,
+guardian_gate:716, hunt_yield_mult:1648, skirmish_stats:1678,
+due_hints:1751. Den respawn state: ABSENT (grep empty) — availability is
+challengeability alone; the truth table's availability column tests the
+refusal rule, not a respawn clock.
+
+### P1 — Den pulse keys to the skirmish band (spec correction; supersedes
+ADR "the hunt_yield rule" wording)
+The pulse advertises the accept/refuse gate, so it MUST key to the same
+threshold (0.25, per den_challengeable). hunt_yield bands govern the
+stalk economy on a different base formula and stay display-only in the
+panel. Rationale: an affordance that visibly disagrees with the verdict
+of the gate it advertises is a lie with a shader on it.
+
+### P2 — No win-forecast getter (binding scope cut)
+Flame affordance is the challengeability BOOLEAN only. No brightness
+proportional to winnability, no forecast-from-the-world. Readiness
+forecast lives in the existing P13 surface; duels remain ceremony
+(ADR-001 wall reaffirmed).
+
+### P3 — Getter contracts (the three, bound to the skirmish_stats class)
+All three: pure, write-nothing, no save keys, deterministic from state.
+1. leyline_attune_ready() -> Dictionary: dry-run twin of attune_next;
+   returns the SAME reason taxonomy the mutating path would refuse with
+   (floor gap / qi gap / ready). The shimmer and the modal may never
+   disagree.
+2. den_challengeable(beast_id) -> bool: thin wrapper over skirmish_stats
+   naming the 0.25 threshold — one constant, one meaning.
+3. guardian_challengeable(gid="") -> bool: per-flame tier-to-gate mapping;
+   "" = current gate. False does not imply loss — ceremony, not forecast.
+
+### P4 — Affordance truth table columns (frozen for the suite)
+(node, den, shrine) x (engine state variants) -> expected affordance.
+Den rows assert against P1's threshold; node rows assert attune_next /
+leyline_attune_ready agreement; shrine rows assert P2's boolean-only.
+
+### P5 — Cage items land before 0.27b's train is over
+AGENTS.md + pre-commit hook + docs/agent/JOURNAL.md begin with the Q53
+housekeeping commits (JOURNAL's first entry records the cage install).
