@@ -32,3 +32,6 @@ what changed, what was learned. Evidence over narrative.
 - The Attuning... + dark world in probe captures = TWO fade windows, not a stuck veil: (1) boot veil auto-hides at frame 45 + 0.25s fade — snaps at global frames 41-81 catch the tail; (2) modal blur backdrop from milestone AcceptDialogs (_hide_all hid the dialog, backdrop fades after). Same-run parchment snap +20 frames later is clean every time. Untampered boot (G2 s0 at frame 44) shows the veil mid-fade NORMALLY.
 - Proof it is timing, not state: veil flag read hidden at all probed frames; zero Label3Ds; UI-hidden capture shows the bright world (veil is UI-layer); s0 shows the veil legitimately mid-fade. No code change. 1.0-G2 watch item: DOWNGRADED to capture-hygiene (snap after fade windows), no blocker path.
 - G2 friction finding (real, cosmetic): breakthrough banners overlap illegibly at 1000x (two Radiant banners mashed center-screen). Candidate 1.0b defect: banner queue/coalesce. Only manifests at high time_scale.
+
+## 2026-10-06 — G1 Round 3 (post-fix tree)
+- Sweep 32/32, 1414 exact. G2 re-run clean (modal fork again — the driver handles both by checking the presented dialog, not the drained queue). Soak single-run PASS. Leak lines flat. Banner fix verified visually both skins: one legible floater from two rapid spawns. R-S22 now governs captures.
