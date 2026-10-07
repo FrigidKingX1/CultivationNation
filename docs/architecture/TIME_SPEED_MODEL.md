@@ -143,7 +143,13 @@ months=capped-remaining; qi=qi_num(); deaths=Δlife; skipped=false`
   CLEARED, `GameEngine.gd:2060-2062`; leyline LOADED,
   `GameEngine.gd:2095-2099`) BEFORE `apply_offline`
   (`Main.gd:164-176`); proven by `p24_presence_test.gd:140-148`
-  and `p27_leyline_test.gd:216-222` (away-gain ratio tracks ×1.16).
+  AND, for ordering per se (offline-after-load as a sequence, not
+  just endpoints), by the P24b real-flow test, which performs
+  set_presence → apply_state → apply_offline in that order and
+  asserts both the cleared presence and the resolved gains
+  (`p24_presence_test.gd:140-148`: "load clears presence before
+  offline", "offline still resolves gains"). The ordering proof is
+  that test, cited here explicitly (amendment, sign-off review).
 - Vigil (default) stalls at `death_looms`, discards remainder,
   reports `vigil:true`; unfettered ticks through death/rebirth
   unseen AND banks karma (`save_robustness_test.gd:323-327`).
@@ -322,11 +328,14 @@ only because shared CI runners cannot honor idle-iron (R-S19).
 
 - R1 DEAD `compute_offline_gains` (SaveManager.gd:291-294): same
   cap, different units, ignores mortality/presence/leyline/gates;
-  live callers ZERO. Doc-only: mark deprecated-or-delete (auditor
-  decision); future caller mistaking it for the path is the blast.
+  live callers ZERO. DISPOSITION (auditor ruling): DELETE in 1.0.1
+  housekeeping, one commit — a dead analytic path that disagrees
+  with the live one is a future-agent trap, not just dead weight.
 - R2 DEAD `beast_cadence_ticks`/`tempo_min` (emitted + asserted
   present, never read): balancer tuning them moves nothing.
-  Doc-only: annotate dead-or-wire (auditor decision).
+  DISPOSITION (auditor ruling): ANNOTATE dead (not wire) —
+  emission/assertion costs nothing; a future system wires cadence
+  deliberately or not at all.
 - R3 Report `qi` lossy float (SaveManager.gd:286 → qi_num →
   Main.gd:232 `format_hybrid`): welcome-back text diverges from
   stored Big past float precision. Cosmetic; doc-only.
@@ -342,16 +351,23 @@ only because shared CI runners cannot honor idle-iron (R-S19).
 - R8 `BN.plus` exponent-gap drop (>15 → addend lost): late-game
   micro-gains vanish into Big stocks. Silent, trivialization-
   irrelevant; doc-only.
-- R9 W1 single-tick phase offset (OPEN micro-question): Summer dip
-  lands one tick earlier than the accrue(L475)-then-recompute(L518)
-  ordering predicts; suspect an additional recompute trigger in
-  the disciple/player path. Totals unaffected (bot-measured);
-  hand-narration only. Needs targeted read, no code touch.
-- R10 `avatar_strike` ignores `running` (panel-freeze is the only
-  suspension); backward-time tolerant (no monotonic guard);
-  `at_msec=-1` sentinel collision; `reach` re-queried live (not
-  snapshotted) so mid-fight realm-ups alter reach mid-exchange.
-  Four small robustness notes; post-1.0 candidates, auditor-ranked.
+- R9 W1 single-tick phase offset (CLOSED, auditor mechanism): the
+  "one tick early" dip is operator order in the accumulation itself
+  — the budget accrues `delta × rate` with the rate path already
+  admitting the new season's multiplier, but the season index rolls
+  during the tick batch while `_season_cached` re-runs the rate only
+  after the batch boundary. The season change is detected on the
+  tick AFTER the calendar rolls, not on the roll itself. Totals wash
+  out over the 12-tick year (lag amortizes symmetrically) — which is
+  why only W1's single-second window exposed it. No recompute-trigger
+  hunt needed, no touch. (Optional verify, not performed: log
+  `_season_cached` vs `season_index()` across one boundary tick.)
+- R10 `avatar_strike` robustness (RECLASSIFIED, sign-off review):
+  `reach` re-queried live is CORRECT behavior, not risk — a fight
+  that can suspend on panel-open must not fight from a stale
+  snapshot. Remaining candidates, auditor-ranked: `-1` sentinel
+  collision, missing `running` check. Backward-time tolerance
+  noted as tolerant-by-construction, not a defect.
 - R11 Nondeterminism inventory (documented, not defects):
   `generate_map(-1)` wall-seeded, sect-name `randomize()`,
   terrain `randf`, tests pin fixed seeds. No action.
