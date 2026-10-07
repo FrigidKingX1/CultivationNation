@@ -1,5 +1,7 @@
 # Cultivation Nation
 
+[![gate](https://github.com/FrigidKingX1/CultivationNation/actions/workflows/gate.yml/badge.svg)](https://github.com/FrigidKingX1/CultivationNation/actions/workflows/gate.yml)
+
 Clean-room cultivation idle incremental built in Godot 4.6.3 (GDScript).
 Original code, text, names, and art. Mechanics-inspired only — no assets,
 dialogue, or code taken from Cycle of the First Dawn, Path of the Idle
@@ -42,12 +44,15 @@ $P = "E:\ClaudeATHome\Projects\Cultivation Nation"
 & $E --headless --path $P -s "res://tests/p25_arena_test.gd"          # manual arena (58)
 & $E --headless --path $P -s "res://tests/p26_stakes_test.gd"         # risk pledges (56)
 & $E --headless --path $P -s "res://tests/p27_leyline_test.gd"        # ley-line attunement (90)
-& $E --headless --path $P -s "res://tests/p28_worldui_test.gd"        # world affordances (64)
+& $E --headless --path $P -s "res://tests/p28_worldui_test.gd"        # world affordances (67)
+& $E --headless --path $P -s "res://tests/pacing_pin_test.gd"        # pacing pin, exact (5)
 & $E --headless --path $P -s "res://tests/soak_test.gd"             # 210y soak (exit code)
 & $E --path "E:\Godot Game Engine\Godot_v4.6.3-stable_win64.exe\Godot_v4.6.3-stable_win64.exe" --path $P  # play
 ```
-31 suites, 1406 counted checks at 0.27.0 (soak passes by exit code). Ground truth
-per release: `docs/qa/p22/sweep_summary.csv`.
+32 suites, 1414 counted checks at 1.0.0 (soak passes by exit code). Ground truth
+per release: `docs/qa/p22/sweep_summary.csv`. Continuous watch: GitHub
+Actions `gate` (boot + FAST_SUITES incl. the pacing pin) on every push;
+bench/soak stay local-only (idle-iron discipline).
 
 ## Play (the world is the interface)
 
@@ -190,8 +195,11 @@ particle budgets remain test-enforced. Headless suites unaffected.
 
 - Windows: `build/win/CultivationNation.exe` (x86_64, Forward+ renderer).
   Web target dropped in P13.
+- Platform statement (G6): Windows-only · Forward+ · pinned Godot 4.6.3
+  (`4.6.3.stable.official.7d41c59c4`) · GDScript · save schema v14
+  (chained fill-defaults migrations) · no new `class_name` (flat scripts).
 Rebuild: `tools/run.ps1 export-win`. Presets exclude tests, tools, docs,
-and prior builds from packages.
+`.github`, and prior builds from packages.
 
 
 

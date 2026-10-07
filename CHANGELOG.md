@@ -8,4 +8,5 @@
 - 0.24.0 — Manual arena (P25): den challenges on a shared gated clock, knockback-only losses.
 - 0.25.0 — Stakes at shrines (P26): Composed/Tempered/Heaven-Challenging pledges, demotion rollback, heaven marks; save v13.
 - 0.26.0 — Ley-line attunement: 8 sequential meridian channels at meditation nodes (x1.08 each); save v14; pacing bit-identical through all five releases.
-- 0.27.0 — (pending) The world speaks: affordance states, HUD completion, hint verbs; audit closure.
+- 0.27.0 — The world speaks: affordance states, HUD completion, hint verbs; audit closure.
+- 1.0.0 — 1.0 readiness: Round 3 certification, first-session driver, banner fix, CI watch, the curve ships.
