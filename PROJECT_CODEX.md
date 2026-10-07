@@ -1,0 +1,273 @@
+# PROJECT CODEX — Cultivation Nation (for a non-local agent)
+One file that teaches everything. Generated from the repo itself
+(47 commits, 10 tags, 87-line DECISIONS ledger reproduced VERBATIM in
+§5). If this file and the tree disagree, THE TREE WINS — then fix this file.
+
+## 1. Identity (verify: `git log --oneline -1`, `git status`)
+
+- Game: **Cultivation Nation** — clean-room cultivation idle incremental,
+  Godot 4.6.3 (`4.6.3.stable.official.7d41c59c4`), GDScript, Windows-only,
+  Forward+ renderer. No new `class_name` anywhere (flat scripts).
+- Canonical paths (THIS machine; tooling now derives them, see §9):
+  project `E:\ClaudeATHome\Projects\Cultivation Nation`, engine console
+  exe under `E:\Godot Game Engine\...` (override via `$env:GODOT_CONSOLE`).
+- Remote: `https://github.com/FrigidKingX1/CultivationNation.git`,
+  branch `main`. HEAD as of writing: `1603b0a docs(audit): perception gap`.
+- State: version `1.0.0` (`project.godot:10`), save schema v14
+  (`SaveManager.gd:5`), 32 suites / 1414 checks
+  (`docs/qa/p22/sweep_summary.csv`), input map 20 actions, 50 realms,
+  7 wardens, 8 ley-line channels, 9 tabs, 9 islands.
+- Sacred number: **73038 ticks / 13 lives** — the default-path full-ladder
+  clearance, six prose verifications + ONE mechanism
+  (`tests/pacing_pin_test.gd`: `EXPECTED_TICKS := 73038`,
+  `EXPECTED_LIVES := 13`). Changes ONLY via deliberate journal-justified
+  signed-off commit (P4 rebalance runbook).
+
+## 2. The game in 20 lines
+
+Breathe Qi to fill the dantian → readiness-gated deterministic
+tribulation (Radiant/Steady/Shaky) → climb 50 realms across 7 macro
+tiers → age-death → Samsara rebirth (karma, aptitude, talents persist).
+Systems: 5 arts w/ drill attunement, mind/roots/seasons, alchemy +
+toxicity, sect/disciples, gear forge, soul weapon, beasts/zones,
+offline real-tick gains, ascension prestige (Dao Marks), macro-tier
+warden duels, manual arena (shared gated clock), shrine stake pledges
+(Composed/Tempered/Heaven + demotion rollback), 8 ley-line channels
+at meditation nodes, avatar presence (×1.5 meditate, flight at realm
+24), world affordances (node shimmer/den pulse/flame height), HUD
+completion, hint verbs. Saves v1→v14 chained fill-defaults, never v2.
+
+## 3. Full commit history (47, oldest-first; `git log --oneline`)
+
+2a0ccd0 baseline v0.20.1 (23 suites, 955 checks, save v11) → P22 Round 2
+closeout (55324b4, 76284d4, a3042b6 chronicle-leak fix, d7e0542 report
++ M1 ADR + 0.20.2, f463d15) → a2cf0f8 guardians 0.21.0 (save v12,
+25/25) → ba28606/fbd8c00 world ADR + coupling → 716bebc/bedfb33
+island world + shrines/ink-retire → 830426e 0.22.0 (26/26, 1075) →
+c955bed standing rules → 02b4441/82b13de avatar+presence →
+cd0d7a4 0.23.0 (27/27, 1136) → 6906d9f Q34-C combat proposal →
+a20b5ff/b426404 arena → 728e89d 0.24.0 → b4b7a5f/b239feb bench+PCK
+corrections → 9d0e484 stakes → 0980e36 0.25.0 (29/29, 1252, save v13)
+→ 6034bb5/6e926c5 attunement ADR + leyline_ rename → 58e6e0f ley-lines
+→ e84e093 0.26.0 (30/30, 1342, save v14) → ca4d389 pretag (V3 lesson)
+→ 9bbd1f9 1.0 definition + 0.27 ADR → 4e7f426 CAGE (AGENTS.md,
+pre-commit // guard, JOURNAL) → dbd17d9 affordances/HUD/hints →
+4209f34 housekeeping (LICENSE/CHANGELOG) → 8e28501 0.27.0 (31/31,
+1406) → 3a14217 evidence logs → 963f8ca 0.28 ADR + play journal →
+2f8f517 phantom watch pin → 9c4dfb1 pacing pin + warden budget →
+9cb6a6a FREEZE (G3) + sunset SHIP THE CURVE → 2b551db audit tool +
+G2 driver → 17472bc floater coalesce fix → 34df43b CI gate →
+6c256fa Round 3 report → f92e1ca **1.0.0** (32/32, 1414) →
+923858b/0d3536a time-model audit + amendments → 1603b0a perception
+gap audit (22 captures + decision sheet). See §5 for what each
+DECIDED (not just what each changed).
+
+## 4. Release table (tags; evidence as shipped)
+
+| Tag | Save | Suites/checks | Pacing | PCK | One-line |
+|---|---|---|---|---|---|
+| v0.20.1-baseline | v11 | 23/955 | — | — | handoff state |
+| v0.20.2 | v11 | 23/956 | — | — | Round 2 + git baseline |
+| v0.21.0 | v12 | 25/1049 | 73038/13 | ~45.6MB w/docs | guardians |
+| v0.22.0 | v12 | 26/1075 | bit-identical | 12,628,840 | true-3D world |
+| v0.23.0 | v12 | 27/1136 | bit-identical; premium 71704/12 | 12,631,136 | avatar+presence |
+| v0.24.0 | v12 | 28/1195 | bit-identical | 12,639,872 | arena |
+| v0.25.0 | v13 | 29/1252 | bit-identical | 12,644,208 | stakes |
+| v0.26.0 | v14 | 30/1342 | bit-identical | 12,649,580 | ley-lines |
+| v0.27.0 | v14 | 31/1406 | bit-identical (6th) | 12,652,812 | world speaks |
+| v1.0.0 | v14 | 32/1414 | pinned (mechanism) | 12,653,196 | readiness |
+
+Per-release bands live in PHASE_*_REPORT.md. Baseline never broke.
+
+## 5. DECISIONS ledger (VERBATIM, 87 lines — the autonomy log)
+
+(thesingle source of WHY; commit messages say WHAT)
+- 2026-10-04: Engine pinned to Godot 4.6.3 console exe at `E:\Godot Game Engine\Godot_v4.6.3-stable_win64.exe\Godot_v4.6.3-stable_win64_console.exe`. No winget reinstall.
+- 2026-10-04: Project at `E:\ClaudeATHome\Projects\Cultivation Nation`. Verified empty before scaffold.
+- 2026-10-04: Clean-room rule: no CoFD / Path / Immortality names, dialogue, event text, or code. All content original.
+- 2026-10-04: License default MIT + ATTRIBUTION.md (inspired-by only).
+- 2026-10-04: No GUT addon download for P0/P1 (keeps run offline-capable). Tests are self-contained `SceneTree` scripts run via `--headless -s`.
+- 2026-10-04: Numbers default hybrid compact → condensed suffixes → scientific toggle (fixes CoFD screen-fill complaint).
+- 2026-10-04: Scope cut order if slow: hunt map gen → sect → alchemy. Never cut save/offline/tests.
+- 2026-10-04 (P2): No Threads/Worker — single-threaded batch tick keeps headless runs deterministic. Revisit only with measured need.
+- 2026-10-04 (P2): SaveManager uses explicit engine_ref (Main.gd wires it); absolute /root lookups removed after -s test proved them illegal outside live tree.
+- 2026-10-04 (P2): Web export is probe-only until export_presets.cfg + 4.6.3 templates exist; never a phase gate.
+- 2026-10-04 (P3): Save schema v2 (8 new keys, v1->v2 defaults). Origin locked per life, reset on rebirth; dantian persists. Technique bonus via optional power_mult param (back-compat). Beast marks 5k/20k (ours, not CoFD's 10k/25k). Pause default off. Banned-terms grep clean (17 terms).
+- 2026-10-04 (P4): Save schema v3 (6 new keys). Gear product-bonus, cost 100x4^lvl, persists rebirth. Map 12 nodes/4-per-zone, seed+current stored only. Sect once-per-save player-named, cap 2+realm, gather +2%/hunt 1/tick/train 1xp. Engine data-free: pool/order/defs supplied by Main/tests. Grep clean in game files.
+- 2026-10-04 (P5): Save schema v4 (achievements). 21 achievements, event-polled only. GridContainer 3->1 responsive via apply_width(). Banner VFX 0.5s fade. Balance as math checks, pacing stated as estimate. Test rules: scene asserts run from _process frames (ready delivery); freeze autoplay in UI tests; test width mapping, not driver resizes.
+- 2026-10-04 (P6): Save schema v5 (player_focus, muted). Focus breathe/drill/stalk 1.0/0.5/0.5. 14-button panel, tribulation uses best bonus (auto too). SfxSynth procedural, zero assets. Web export: 4.6.3 templates + nothreads preset, build/web shippable, tests excluded. Test rules: Button has no press() (emit pressed); autoload ready needs frames; suspect test expectation when UI shows a different valid value.
+- 2026-10-04 (P7): No schema change (all keys existed). Wired 6 unreachable systems: origin buttons (lock enforced), drill-art focus, generated sect names (no text entry), per-disciple duty cycle via deferred rebuild, 12 node buttons + stalk, per-item refine. Windows x86_64 build ships alongside Web. Dynamic button rebuilds need frames before pressing in tests.
+- 2026-10-04 (P8): Save schema v6 (hints_seen, nodes_visited). Zone gates 0/2/4 by zone order; wander respects gates (bug caught in review). 8 one-time hints at UI cadence. Note: used bash+python for batch stamp edits once; prefer Edit tool for file ops going forward.
+- 2026-10-04 (P9): Tier-2 data only (18 realms x4 parity, Murkfen gate 6, +2 arts, +2 gear, +6 achievements on existing stats). No engine/schema/balance changes. Achievement denominator now dynamic. Count asserts updated per suite.
+- 2026-10-04 (P10): No schema change (records derived: peak=realm_index, kills=sum, time=ticks/12). Autoplay bot plays live scene 3+ lives via buttons. Warning sweep: zero SCRIPT ERRORs in 12 suites. Bot/record tests run from _process frames.
+- 2026-10-04 (P11): Pacing model found hard stall past realm 8 (19,842 dead lives). Tuned TWO knobs, both measured: foundation x4/breakthrough (tried x2 first, still doubled - corrected on evidence) + drill xp scales with depth. Result: 18 realms in 55,433 ticks / 110 lives. Shortcuts 1/2/3/T/7/8/9/0/Space/H/W/M route to existing handlers. Honest deviation from one-knob plan, documented.
+- 2026-10-04 (P12): Cultivation rework in 7 slices (P12-0 integrity … P12-6 content/closeout). 50 realms at 120x4^i via tools/gen_realms.py (kept x4 over spec super-exponential: P5/P9 assert exact x4); layers partition each realm, attempts open at 2/3. Roots fated per life (seed life*7919+13), mind Serene 1.25/Steady/Strained 0.8, seasons from _month_accum, deterministic N-wave tribulation with leak-vs-core quality, deviation -10%/flaw, scars -5y (cleared on rebirth; deviation persists as karmic), alchemy instant-brew (timers cut) with toxicity to 0.5x, karma depth-weighted with aptitude untouched, one schema bump v7 for all P12 keys. Deliberate spec deviations: no file restructure, no lint (gdtoolkit absent), float retained (BigNum display-only; JSON parser 1-ulp noise at 3/50 entries proven by probe, parity uses 1e-9 tolerance), no probabilistic gating, no Ascension. Result: 50 realms in 167,098 ticks / 83 lives; lives band 150 (same 1.8x headroom). Total ~470 checks green, Web+Win builds ship.
+- 2026-10-04 (P13-A): Audit via scripted UI playthrough + measurement harness (both deleted after): 10,595 doomed attempts/clear (attempts fired with no readiness check; policy/Main/button all shared it), 82/82 deaths scar-caused, Steady quality 0/50, mind 100% Serene, soul 0 XP in Tier 1, route planner dead (no setter/UI), no voluntary rebirth, no drill hint. Ranked BROKEN > MISLEADING > SHALLOW in AUDIT.md. No fixing in audit phase.
+- 2026-10-04 (P13-B1): Readiness-gated attempts (engine is_ready = gate expression, zero drift; Main auto/manual + policies refuse cost-free with the drill fix named) + proportional failure costs (99% graze ~free, 0% pays old price). Policy fails 10,595 → 0; clear 167,098/83 → 166,546/27. P3 purity asserts moved to tolerance (proportional math); p11 policy restructured + fails==0 band.
+- 2026-10-04 (P13-B2): Shaky successes no longer scar (endured crossings flaw only; scars = true failures). Scarred deaths 26 → 0; age governs death again. Bands untouched. P12 Shaky-scars check updated (old behavior replaced, per brief).
+- 2026-10-04 (P13-B3): Drill discoverability — engine trib_power_for + hint_drill debt (full-but-weak names drilling once per save); idle path survives by construction (gated attempts). P8 unaffected (additive hint).
+- 2026-10-04 (P13-B4): Quality calibration needs no change (Steady revived 16/50 by B1 side effect; spread Radiant 8/Steady 16/Shaky 26 reads as difficulty curve). Readout pass: Attempt button shows live readiness + forecast, sympathy glyph + season effect tags in HUD, bequest button shows sacrificed level.
+- 2026-10-04 (P13-B5 shallow verdicts): route planner CUT (deleted API/state; v2 migration history untouched; P3 route checks removed). Mind DEEPENED (decay moved cultivate→drill, breathe now calms: friction bites power-chasers; player decision = drill-vs-rest allocation). Soul DEEPENED (+2 XP per wavless T1 crossing; early choice now moves by mid-T1). Voluntary rebirth ADDED (karma-timing decision: cash in vs push deeper). Hunt DEEPENED (milestone forage +25/+100 herbs ties stalk to alchemy). Focus keystone: drill/stalk yield zero Qi (was half) — time allocation is now the central decision (power XOR progress); bench/P6/apply_state updated (old behavior replaced). Bequest text only (gain already shown).
+- 2026-10-04 (P13-Web): Web target dropped (preset deleted, run.ps1 export-web → export-win, README builds Windows-only). Single-target focus; Forward+ lands in P14. Also fixed run.ps1 Invoke-Godot output-capture flaw (reported FAIL on green exports).
+- 2026-10-04 (P14-0): Renderer gl_compatibility → Forward+ (Windows-only). Sim untouched; all suites re-ran green.
+- 2026-10-04 (P14-1): World shell (SubViewport + TextureRect + Ink post shader; World Node3D sibling of UI) + SpriteFactory single-factory (cultivator/beast/glow procedural, cached; no class_name). look_at_from_position (look_at errors pre-tree).
+- 2026-10-04 (P14-2): Procedural diorama (platform, 30 seeded peaks in 3 rings) + 9 zone palettes (reskin by material mutation). tools/gen_realms.py pattern kept for data; palettes are view-owned display data.
+- 2026-10-04 (P14-3): Cultivator billboard (factory robe tint by root), aura (mind color, tox/dev density), soul charm, gear ring, readiness ring (Late-gated green/amber/red mirrors is_ready).
+- 2026-10-04 (P14-4): Season weather (one reconfigurable GPUParticles3D), 7 tier light grades (ContentDB read, display-only), 6 beast billboards following walked grounds.
+- 2026-10-04 (P14-5): Tribulation sequences (buildup/strikes/outcome by quality, shake, cracks; async, re-entry ignored) + died/reborn transitions + translucent HUD panels. First screenshot exposed the live layout was ALWAYS broken (unwrapped stats hogged the row, 40+ action buttons below the fold unreachable — every post-LifeGrid system unplayable live). Fixed: ActionScroll wrapper (8-file mechanical path migration), StatsLabel autowrap.
+- 2026-10-04 (P14-5b): ViewportTexture path sub-resource never resolves (0x0 texture, flat grey) — bind svp.get_texture() at runtime. Ink shader must sample TEXTURE/UV (assigned texture), never screen_texture/SCREEN_UV (captures the empty main viewport behind the rect). Both proven by screenshot.
+- 2026-10-04 (P14-6): Budgets enforced by failing p14 test (measured 59 nodes/334 particles; caps 160 nodes, 384/effect, 768 total; verified the test fails when tightened). tools/frame_probe.gd: 60-90 FPS live on RTX 2080 SUPER + screenshot verification.
+- 2026-10-04 (P16-0): Measure-first audit (temp probe deleted after; P16_AUDIT.md): pacing baseline 70738/11, play evidence via real UI handlers + per-life screenshots, offline confirmed absent (timestamp stored, never applied). Probe policy stalled at realm 1 (never breathes — stale pre-keystone policy, artifact not bug).
+- 2026-10-04 (P16-1): Offline gains by real-tick simulation (1 month/sec, 8h cap): no attempts fire (gates never skipped, Qi pools), deaths follow choosable offline_mortality (vigil stalls at death's door, unfettered resolves unseen; defaults vigil; v8->v9). Welcome-back summary via log lines; Main connects signals before load so offline deaths/pauses log. Seclusion cycle button (P17 relocates to settings). p16 suite (integration through live boot + toggle) + save_robustness offline section (zero/cap/pool/vigil/unfettered/validation/fixture/gap-soak).
+- 2026-10-04 (P16-2): Lower pacing bands from measured baseline (clear >= 30k ticks, lives >= 5; uppers + fails==0 untouched). Tripwires against silent trivialization.
+- 2026-10-04 (P16-3): Representation — sect duty dots (8 shown), cauldron + herb bundles (25 each, 5 max), deviation red pulse, 4 beast silhouettes by hash through the factory. Budget test still green (no new particle systems).
+- 2026-10-04 (P17-0): Audit via screenshots (tools/shots/step0_*): 40-button scroll column buries management, stats blob undifferentiated, buttons text-only with no tooltips/disabled states, no title/settings/version, 2 of 5 arts unreachable live (Mistwalk/Stonebell have no buttons). UI_AUDIT.md + UI_SPEC.md (layout/type/spacing/ink tokens/motion/focus rules); spec reviewed against shots before building.
+- 2026-10-04 (P17-1): Vendored OFL pair (Ma Shan Zheng display + Inter body, license in ATTRIBUTION.md; single offline-policy exception) + code-built UITheme (diffable/testable over .tres) + version 0.17.0 + UIComponents.stat_row. Theme absorbs _thin_overlay. Glyph coverage tested per font (no string replacements needed).
+- 2026-10-04 (P17-2): Thin HUD — top bar (realm/age/Qi glow bar/mind/season/speeds/pause/mute), two-row dock (focus/attempt/stalk/wander + recruit/gang) with hotkey hints, title overlay (save-gated boot hold; fresh boots unchanged), toasts (cap 3, auto-expire), collapsible filterable log (defaulted category arg; ring buffer), animated Qi bar (refresh-exempt labels only), readiness symbols (glyph-restricted »/!/x). Caught live: infinite loop via queue_free-deferred counts (remove_child first); _refresh_topbar unwired; season-flaky readiness text (pinned Spring); duplicate PanelsBtn; realm label crowding (realm_short).
+- 2026-10-04 (P17-3): Nine-tab SidePanel (Sect/Alchemy/Arts/Soul/Samsara/Beasts/Deeds/Records/Settings); all management moved, old Columns tree deleted; SfxSynth.volume; SaveManager export/import with backup rotation; FileDialog wiring; bestiary/achievement/attunement builders (tab-open + signature-gated refresh); tooltips on every stat and dynamic button (data descs); settings (volume/glow/mortality/export/import); F1 help + Esc layers; p16 presses Continue through title.
+- 2026-10-04 (P17-4): Pooled floating numbers via unproject (cap 12, tween-callback recycle, no custom signals); shine sweep as overlay child (a canvas material would replace the button draw — caught before shipping); blur modal on title/help, screenshot-verified against the P14 grey failure; input contract test (panels STOP, world IGNORE); panel open fade. Log double-append caught on screenshot (RichTextLabel.text getter vs appends — same class as the P13 lesson).
+- 2026-10-04 (P17-5): Panel/tab/focus/signal tests; FPS parity 60-90; pacing identical 70738/11 (zero sim changes); 3-resolution screenshots in tools/shots/.
+- 2026-10-05 (P18): Gradual pacing — front-loaded ladder (10x@realm1 → 1x@realm9, pure 4x after) via front_load() in tools/gen_realms.py; fixed set_realm_table never wiring the current bottleneck (realm 1 always cost the 120 default — the front-load would have been dead). Measured 73066/13 (realm1 72→705, realm3 584→2562, late per-realm untouched); bands hold, parity tests (p5/p9) rewritten front-load-aware, p12 label test reads the wired bottleneck.
+- 2026-10-05 (P19b): Ascension prestige — Dao Marks on sqrt-dampened all-time Qi (floor(12·sqrt(total/1M)), first yield at 1M lifetime); new data/prestige.json (3 nodes: flow/years/tithe, 20 ranks, rank+1 costs) via ContentDB + set_prestige_defs; ascend() deep-resets world (realm/rate/aptitude/gear/sect/arts/attunement/herbs) keeping soul/talents/karma/records/lifetime; qi_earned_total ticks alongside (never rebirth-reset); bonuses hook rate/lifespan/karma; Samsara ledger + forecast + two-press confirm (12s arm; modal manager in P19c upgrades confirms) + data-driven tree rows; 43 achievements untouched (counts asserted in 4 places). New prestige_test (46) + p17 UI flow (7); save stays v10 (same unreleased phase).
+- 2026-10-04 (P19c): Interface modernization — ModalManager (original build/present split, lifecycle-managed, live-themed; headless-proven popup_centered) owns ascension confirms (two-press retired), offline welcome-back reports, once-per-tier dedications (engine poll_milestone + milestones_seen, saved); engine buy_bulk for gear/brews/talents/dao (xN/MAX cap 999, stops at refusal) + top-bar x1/x10/MAX cycler; UpgradeRow component (legacy button names kept, test maps updated for row level); left-nav rail (sibling-panel docking chosen over reparenting to avoid ~100 tscn path rewrites; headerless tabs, gold highlight, Esc/toggle sync); ink-prestige reskin (deeper cards, brush-line borders, gold hover, seal press, gold dialog titles, seal warn toasts; CINDER finally at work); stale "above" hint fixed. New p19c_test (39) + p17 rail/reskin (67); FPS 58-66 parity; pacing 73066/13 untouched. Version 0.19.0. Caught live: // comments in GDScript, rename-then-lookup in row builders, deferred queue_free in modal asserts, MAX-cap test premise (cubic costs), integer normalization noise (fast paths added).
+- 2026-10-04 (P21-0): Vendor drops (byte-identical + licenses): ChronoDK Big.gd (Godot 4.1.x, class_name Big) to third_party/ChronoDK-Big/; shoyguer big-number v1.1 Windows bins + .gdextension to addons/big_number/ (compatibility_minimum 4.6, x86_64 present); full Maaack template plugin dirs (4 runtime plugins, 577 files) to addons/ + MIT text to third_party/ (plugin_updater/clean_copy_examples skipped: installer helpers, no runtime value); Kingsmai starter-kit themes/ to third_party/KenneyStarter/ (texture-gloss variants clash with ink-prestige — architecture reference only). Editor plugins are NOT enabled (headless-first pipeline; runtime parts wired manually). Export ships everything (directory exclude globs proven dead in this preset: tests/tools/vendor all in the 11.6MB PCK, same as prior releases). ATTRIBUTION rewritten (clean-room paragraph retired), project.godot header updated.
+- 2026-10-04 (P21-1): Big backend switch — adapter delegates kernels to native behind use_backend(), default gdscript. Probed native quirks, all guarded in adapter: set_mantissa normalizes in place leaving exponent stale; native normalize() drops the shift; minus() mis-signs true underflow; div-zero pushes an engine error (adapter guards first). VERDICT (measured, not assumed): native ~28% SLOWER per tick (20.9s vs 16.4s per 200k ticks — call overhead dominates), pacing tick-identical 73066/13, values bit-identical. GDScript stays primary; native stays vendored, wired, and CI-proven via bignum native-parity section (55 checks). ChronoDK file remains reference-only: the native core descends from it, so its lineage is adopted optimized; a literal third backend was rejected as doubled verification cost for zero gameplay gain.
+- 2026-10-04 (P21-2): Music + settings. Eric Matyas OGGs downloaded autonomously (soundimage direct links work; Pixabay blocks scrapers, itch packs need interactive purchase): title/game/triumph, ~10.5MB, attribution filed. Maaack music controller as autoload (renamed MaaackMusic: vendor class_name collision) with title/game/triumph direction, idempotent requests, teardown-safe pump + _exit_tree detach (vendor clones exiting players: caught live). SFX bus routing + runtime Music/SFX bus install (Maaack installer is editor-only; headless never runs it). Hover/focus sounds via UI-sound controller (pressed deliberately empty: explicit path would double). Settings persist via vendor player_config (volume/glow/music/skin); SfxSynth.volume + VolumeSlider path preserved (p6/p17 pin them); mute stays save-backed.
+- 2026-10-04 (P21-3): Interface systems. Hard tab gates from data/reveal.json (derived, never stored; locks gate rail navigation only, content builders bypass so scene suites are unaffected; first poll baselines silently). Press squash on shop rows + existing bulk toasts (pool reserved). First-session coach overlay (derived steps, v11 coach_done). Transition veil for boot/import/export/ascend (scene-loader pattern fitted single-scene: vendor autoload stays out as an idle tree-wide watcher with zero runtime value). Parchment alt skin (code-driven variant architecture a la starter kit: kit textures are gloss-game-UI and clash with ink-prestige; OFL fonts protected). Rebinding via runtime InputMap actions + embedded Maaack input/video options (display-guarded: key-name lookup needs a display server; headless skips vendor UI, actions register everywhere). Audio options scene cut (would duplicate our sliders).
+- 2026-10-04 (P21-4): 23 suites green (about 920 checks; new p21_test 52 covering gates/migration/music/settings/input/coach/veil/skin). Pacing 73066/13 untouched. FPS 77 band parity. Screenshots show coach, locks, unlock lines live. Version 0.20.0, save v11. P20 scope absorbed (never executed standalone).
+- 2026-10-04 (QA Round 1): Five real bugs fixed, all screenshot-verified: (1) title-hold starved the boot veil + music pump behind the running gate — both run unheld now; (2) TabContainer content well fell back to default grey — themed per skin; (3) parchment disabled text unreadable — dedicated dark tone; (4) HSlider vanishes near max (grabber crossing the ~392px panel content edge blanks the whole control; threshold proven between 0.90 and 0.95 by staged screenshots) — 300px shrink-centered sliders + CI width ratchet (this hid the default-100 SFX slider from every fresh player); (5) vendor rebind list built rows into a zero-height scroll — show_all_actions on instantiate + 320px claimed height. Systemic: p21's coach-dismiss save held followers at title (p10 timed out 3/3) — p21 wipes at close and all scene suites self-protect at start. Investigated, not bugs: 777-life zero-input soak stall (autoplay never drills; pacing bot unaffected), triumph-to-game resume after ascend (by design), exit-time ObjectDB noise (pre-existing class), native slower verdict (stands). Ratchets: // scanner, slider width, theme/skin asserts. Full report in QA_ROUND1_REPORT.md. Version 0.20.1.
+- 2026-10-04 (P15-0): Measure-first audit (temp probe, deleted after; P15_AUDIT.md): Qi max stockpile 1.05x (no sink exists), karma funds everything by realm ~15 (11,550 lifetime cost vs 100k+/life late), recruit n2+ negative early (payback > life), herbs bank 3,500 untended, toxicity >= 75 zero ticks in both paced and pill-using runs, offline gains never applied in live play (record timestamp unused — P16 candidate, out of scope), scars/Failed ~0 live, beast power zero consumers. Nothing dropped; backlash threshold tuned to data (24 = deliberate double-dose, never ambient).
+- 2026-10-04 (P15-1): Build identity via attunement 0-100 (rises drilled +1/12, cools others -1/48; scales power to +50%, gates perks at 60) + per-art curves/wear/perks in data (ContentDB-validated, set_technique_defs injection; unknown ids fall back to legacy exactly, preserving bench/p3/p6/p12). Soul paths split: blade power, bell shield, mirror karma tithe (no new soul state). Pacing policy now uses engine bonus (was blind to attunement; manual formula replaced). Result: clear 167,712/28 → 70,738/11, bands hold untouched. Best-tracks-max verified; commitment design documented (switching costs rebuild; perks/curves are the reason).
+- 2026-10-04 (P15-2): Sinks — talent ranks uncapped (quadratic cost is the sink; p12 cap check replaced), herb choke capped 999 (single _gain_herbs invariant), refine overflow past max at same curve (self-limiting whale dump; p4 cap check replaced), recruit cost capped at 8 fills (binds only early; disciples persist so lifetime ROI was always positive). Bot buys nothing: pacing untouched by construction.
+- 2026-10-04 (P15-3): Victory flag on first realm-50 clear (persists rebirth/saves); celebration log + banner via both attempt paths; realm_label reads Summit cleared COMPLETE. Post-clear sandbox under existing cap refusal. No Ascension.
+- 2026-10-04 (P15-4): Toxicity backlash (success at tox >= 24 scars +2 with log warning; avoidable via purge/rest/travel/spacing; failures keep proportional scars; Shaky stays scarless). Hunt gating on beast power (full/parity, 3/4, half tiers + mind -1 when weak; disciples share yield, no mind hit; stalk button names the drill fix). Both recorded as the vestigial answer: scars matter via backlash, power matters via hunts, Failed stays engine truth (live UI never triggers it by P13 design).
+- 2026-10-04 (P15-5): Travel toll 5% bottleneck on re-walks only (first visits free: exploration/mind loops intact, p8/pacing unperturbed; wander tries richest-first until one succeeds; must-afford invariant + zero-Qi legal-move test). Achievements 27 → 43 (8 realm band, 7 systems via 7 new live-state stats, True Bestiary 39 + Beast Scholar rename); brew/drink/buy_talent now poll achievements.
+- 2026-10-05 (P22): Round 2 closeout + git baseline. Local repo initialized (`main`, automation identity repo-local); baseline commit + tag `v0.20.1-baseline`; `build/` + `.godot/` + `tools/shots/` ignored; build outputs pinned by `docs/qa/baseline_BUILD_MANIFEST.sha256` (hashes, relative names). Round 2 evidence archived to `docs/qa/round2-archive/`; user-state residue backed up then cleaned; orphan `tools/p21_probe.gd.uid` removed. Full sweep 23/23 exit 0 (956 counted lines); bench 5s budget held — one load-induced failure (5.7s at 60% CPU, clean tree), green on re-run, gate unchanged. Save-only soak completed: objects stable, save/load path innocent. Genuine leak found in UI path: chronicle `RichTextLabel.append_text` retained ~1 Object/line forever (ring cap did not bound the document); fixed by rebuilding from the ring past 400 visible lines (`UIManager._rebuild_log_text`), permanent p17 regression (600 lines → growth < 450). 240s ui soak re-run green (delta 282). Version 0.20.2, save v11 unchanged. No migration code; no push performed (remote/push needs separate confirmation + credentials).
+- 2026-10-05 (M1 ADR, Q17-Q22 creative call): engine stays Godot 4.6.3 Forward+; full CN systems preserved; v11 saves migrate forward to v12 (never v2). Guardians approved as new separate additive system (deterministic duel model; defeat persists through Samsara); names/flavor deferred to 0.21.0 report. Meridians DEFERRED to P24/P25. Deterministic breakthroughs reaffirmed; R-1 stakes TABLED post-M6; R-2 Legacy Echo DEFERRED; active-play premium deferred to P25. SSI prototype batches archived as non-authoritative reference only. Record: `docs/adr/M1_MIGRATION_ADR.md`, report `QA_ROUND2_REPORT.md`.
+- 2026-10-05 (P23): True-3D world (0.22.0, save v12 unchanged). WorldView diorama internals replaced by nine floating zone islands + perspective orbit rig; zero sim diff, no migration, input map untouched. Standing rules added: every new power constant names its scale in-code (from the guardians trib-scale catch); verify signatures against raw bytes, never wrapped display output (from the -> void false positive). Guardians victories persist through ascension as well as rebirth (M1 extension recorded). Q21 guardian names APPROVED FINAL (banned-terms grep clean; provisional flags removed). Q23-Q28 ratified: R-1 deferred post-P24, nine islands, ink retired, docs/* export exclusion, soak policy + 480s plateau gate, agent-authored palettes approved with review. P23a/b/c gated per ADR; 26 suites green (1075); pacing bit-identical 73038/13; plateau delta(240-480s) -39. Reports: PHASE_23_REPORT.md, docs/adr/P23_WORLD_ADR.md, docs/adr/P23_COUPLING_ADDENDUM.md.
+- 2026-10-05 (P24): Avatar & presence (0.23.0, save v12 unchanged). First engine touch since migration, full M5 discipline. Input 13→19: six world_* actions (WASD/E/F, no jump); cult_wander default W→V (WASD collision; five rule-11 citations; stored rebinds keep keys; explicit-W-rebinders edge documented). Presence premium ×1.5 enters compiled qi rate by BRANCH (R-S13); runtime-only with default/apply_state/rebirth/ascension resets; offline ignores (load-first real-flow tested). Flight unlock realm 24 Nascent Soul (Q31 final, data-driven via flight.json pattern); sword-mount + 2.5× movement speed (R-S7 distinct scale). Node markers golden-angle ring; meditate/strides-break; avatar walls read engine rules. Pacing default 73038/13 bit-identical; premium-on reference 71704/12 (sub-linear, own bands; P16 wires evaluate defaults only). 27 suites green (1136); plateau delta(240-480s) -182 PASS; ring-reuse still green. Reports: PHASE_24_REPORT.md, docs/adr/P24_PRESENCE_ADR.md.
+- 2026-10-05 (P25): Manual arena (0.24.0, save v12 unchanged). Q34-C skill combat: same stats + trace → identical outcome; tempo buys duration + Q35 bonus only. Shared gated clock (one tick per landed attack, 400ms clamp, both frozen otherwise); tick tuning win-iff-ratio->0.5, refusal below 0.25 (intentional divergence from auto parity, loss band documented); cultivator-strikes-first resolution order pinned. Win via EXISTING hunt_at + Q35 XP through EXISTING train_technique (opt-in-only; only engine write); loss = knockback only. Input 19→20 (world_attack RIGHT mouse; LEFT is orbit-drag); (type,code) collision proof; N-scaled list height tested at 480px. Rebind capture supports mouse buttons (vendor records InputEventMouseButton; no limitation). Dens golden-ring deterministic; shrines queue guardians into existing duel flow (rule 4 held). Panel-freeze asserted (zero HP change). 28 suites green; plateau PASS; pacing default bit-identical (re-verified). Engine-touch ledger: P24b factor / P25a getter / P25b train_technique write. Reports: PHASE_25_REPORT.md, docs/adr/P25_ARENA_ADR.md, docs/adr/P25_COMBAT_DESIGN.md.
+- 2026-10-05 (M2-M5): Macro-tier guardians (0.21.0, save v12). (Numbered M2-M5, not P23: the P23 designation belongs to the true-3D world per the locked roadmap.) ADR-001 implemented as specified: 7 generated wardens (`tools/gen_guardians.py` owns `data/guardians.json`, never hand-edit), deterministic N-wave duels on the tribulation-power scale, Warded refusals, proportional defeat costs, first-win rewards, victories persist rebirth+ascend. Caught pre-ship: Qi-scale/trib-scale power mismatch stalled pacing at realm 7 (generator now reads trib_power); fix verified by full-clear re-measure 73038/13 vs 73066/13 baseline. UI: Beasts-tab roster + Challenge buttons, Attempt `· Warded` state, auto-duel with once-per-fill loss notes. Tests: new guardians (79) + save_v12 (9); p15 live victory exercises refused→duel→clear; v12 stamps updated in save_robustness/p5/p6/p8/p21. 25 suites green (1049). Names stay provisional (Q21 deferred). Report: PHASE_M2_M5_REPORT.md.
+- 2026-10-05 (P26): Stakes at shrines (0.25.0, save v12 -> v13). Q39-Q43 all recommended: heaven mark x1.02/stack cap 7 qi-rate; demotion crosses downward (realm-0 proportional fallback); preference + marks survive Samsara/ascension; shrine+modal only; material = +100 herb cache via existing forage path. Refusal-divergence documented (manual ratio below 0.25 vs auto parity; 0.25-0.5 always-loses band; zone gates unaffected). Tuning pin: threshold = sqrt(beast_tick_frac) exact; simultaneous-cultivator-first resolution. Moved P25a assertions carry rule-11 citations. Single-tick max tempo intended; XP farming bounded by tolls+time+drilling parity. Panel-freeze asserted (suspension + zero HP). Demotion scars FLAT +2 (proportional formula vacuous on success paths). 29 suites green (1252); plateau second-half negative PASS; bench idle-iron green; pacing default bit-identical (re-verified). Reports: PHASE_26_REPORT.md; ADR Amendment 2.
+- 2026-10-06 (0.25.0 verdict closeout): Heaven-Challenging is a selective tool, not a run-long stance — pledge HC only at favored crossings where Radiant is near-certain; bands document naive policies as balance floor. Stake-switch escapability confirmed EMPIRICALLY (switch-to-composed-after-first-demotion bot clears 72,984/13, 54 ticks faster than pure composed from the banked cycle) — the no-switch greedy stall is policy failure, not a trap.
+- 2026-10-06 (Q44-Q48 Batch 11): Q44 world-class reset + Q45 +8pct additive retained; Q46 meditation-node modal, map stays 20; Q47 floors agent-selected from tier structure, approved in 0.26.0 report (Q31 pattern); Q48 arc ratified — attunement 0.26.0, UI evolution 0.27.0, 1.0 question at the 0.27.0 gate.
+- 2026-10-06 (0.26a finding): `attunement` name TAKEN (P15 per-art drill dict + attunement_of + save key) — meridian system renamed to `leyline_` prefix throughout ADR draft; insertion point pinned post-heaven-marks branch pre-finite-guard; cost calibration agent-proposed with R08/R16 bases corrected against realms.json.
+- 2026-10-06 (0.26c ship): 0.26.0 ley-line attunement. Sweep 30/30 CSV 1342 = 1252 + 90 exact; pacing 73038/13 (five verifications / four releases 0.22.0-0.25.0); plateau +228 / -50 vs gate 150 PASS; opt-in band 72,844/13 open=8 (-194, near-flat as predicted, no tuning); PCK 12,644,208 -> 12,649,580 (+5,372 vs 0.25.0; +16 over first export = baked version string, V3 re-export); offline loaded-attuned-save -> 300 away-months +589.25 qi (retain-don't-clear explicit); C5 second life (+3 additive, re-extracted same-commit); Q47 floors approved; seven suites' stamps 13->14 (R-S12, cited in PHASE_27_REPORT).
+- 2026-10-06 (0.26c pretag): hold ratified — no verdict without evidence. V3 bit (export predated version stamp) -> re-export; plateau canary resolved by rerun (+192/-71 PASS; first-half variance is frame-rate-proportional allocation noise, no leyline Object on the default-inert soak path); state.json carries no version string by design (V2 sub-check inapplicable); sweep validity recorded (e84e093 docs/version-only, 0.24.0 precedent).
+- 2026-10-06 (0.27.0 gate, Q49-Q54 Batch 12 all-STAR): Q49 'the world speaks' theme; Q50 full HUD (realm, stage, qi, rate, activity); Q51 archive emphasis, nine tabs remain; Q52 hint refresh in 0.27.0; Q53 housekeeping lane all-in (audit F2/F3/F4/F10 + cage + CI); Q54 1.0 definition + arc ratified (0.27.0 UI -> 0.28.0 feel pass with bit-identity sunset decision -> 1.0.0 readiness G1-G6, zero features). Cage status: AGENTS.md/JOURNAL/pre-commit-hook all OPEN (verified by read); install rides the housekeeping lane.
+- 2026-10-06 (0.27c ship): 0.27.0 the world speaks. Sweep 31/31 CSV 1406 = 1342 + 64 exact; pacing 73038/13 (sixth); plateau +177 / -31 vs gate 150 PASS; PCK 12,649,580 -> 12,652,812 (+3,232 vs 0.26.0; re-exported post-stamp per 0.26c lesson, +48 baked version); screenshots both skins (ink carries unexplained veil-text artifact under probe tamper, watch item for 1.0-G2); housekeeping closed (F2 holder named, F3 verified as files, F4 refreshed, F10 written, 8 tags); CI deferred to micro-release; phantom + hook-firing journaled.
+- 2026-10-06 (0.28.0 gate, Q55-Q57 Batch 13): Q55 owner dumps impressions as journal entry one, then sessions accumulate; Q56 one-time rebalance ON THE TABLE if the journal says so; Q57 sunset framing ratified (both answers legitimate, history preserves). 0.28.0 ADR skeleton + play journal materialized (agent never touches the journal). Conditional 0.27.0 acceptance answered with six evidence lines.
+- 2026-10-06 (0.27.0 verdict pin): ink-skin phantom veil-text artifact, visible in probe captures only, never in untampered play; mechanism undetermined. Disposition: 1.0 G2 WATCH ITEM. G2's scripted first-session path MUST include an ink-skin capture step. If it reproduces in untampered play -> blocker-class defect, fix before 1.0. If probe-only -> document as probe-harness artifact with mechanism note. Candidate surfaces for the eventual diagnosis (unranked): P21 transition-veil layer; skin-conditional text visibility the parchment path hides. No code changed on a hunch.
+- 2026-10-06 (0.28a sign-off, Q-ledger): Flag 1 elevated to unconditional mechanism (prose convention with excellent manners, never a control); Flags 2-4 ratified (warden budget assert, stale comment folded, fills-identical framing + clarity lever). Amendment 1 materialized; inventory relayed to docs/tuning/TUNING_INVENTORY.md.
+- 2026-10-06 (0.28b armor): pacing pin EXPECTED_PACING=(73038,13) green maiden run (duels=7, duel_ticks=0, budget 0%); R-S20 red demo (73039 constant fires exactly the pin line, probe removed); sweep 32/32 CSV 1411 = 1406 + 5 exact. Zero tuning.
+- 2026-10-06 (sunset, Q58/Q59 all-STAR): SHIP THE CURVE — journal declined so the Q56 condition never fired; decision on measured bands, not a violation. No 0.28.0 release; train 0.27.0 -> 1.0.0 (1.0a/b/c). P4 stays armed; U-ledger (d) resolved by decision, recorded as such. Content freeze (G3) declared: nothing after except defect fixes + G-gate evidence.
+- 2026-10-06 (1.0b freeze definition, binding): freeze covers scripts/scenes/data/gameplay keys; tests, tools, docs, .github are EXEMPT (evidence + tooling). CI/tooling commits are never freeze violations.
+- 2026-10-06 (G1 Round 3): 32/32 CSV 1414 = 1411 + 3 exact; G2 re-run 0 stumbles; soak +180/+62 PASS; leak trace flat (baseline 2, scene suites as before); banner defect fixed+tested+captured; veil watch closed as capture hygiene; CI landed (YAML-valid, first green pending push). Freeze held (one defect-class fix).
+- 2026-10-06 (1.0c ship): 1.0.0 readiness. Sweep 32/32 CSV 1414 exact; G2 0 stumbles; soak +180/+62; bench 9.0%/4150ms (final idle-iron); PCK 12,652,812 -> 12,653,196 (+384 vs 0.27.0, exported post-stamp); U-ledger closes (a,b,c,e answered; d by decision, no overclaim); sunset reference; CI ruling; banner disposition; R-S22. Freeze held.
+- 2026-10-06 (BigNumber semantics, silent by design): BN.plus drops the addend when mantissa-exponent gap exceeds 15 — late-game micro-gains vanish into Big stocks without signal. Trivialization-irrelevant, display-irrelevant; recorded so no future audit re-discovers it as a defect.
+- 2026-10-06 (time-model audit close): W1-W6 reproduced on paper; R9 closed by auditor mechanism (batch-boundary detection lag, totals wash out); Flag B ordering proof cited to the P24b real-flow test; Flag C reach reclassified correct; R1 slated delete-1.0.1, R2 annotate-dead, rest doc-only. Document of record stands; amendments in one docs commit.
+
+(DECISIONS ends; authoritative future entries append here.)
+
+## 6. Architecture map (where things live)
+
+- `scripts/GameEngine.gd` (~2126 lines): the sim. Tick loop `_process`
+  (456-468), rate chain `_recompute_rate` (310-338), `_step_tick`
+  (470+), breakthroughs, guardians, stakes, ley-lines, saves
+  get/apply_state (~1986-2126), offline support. Autoload.
+- `scripts/Main.gd` (~2222): scene root logic. Input map (20 actions),
+  4Hz UI poll (1827+), autos (trib/duel), modals (pledge/ley-line),
+  hints, tooltips, topbar/dock/rail wiring, title/veil/music.
+- `scripts/WorldView.gd` (~1897): 3D world. Islands, avatar, camera,
+  dens/shrines/nodes, fight loop (tempo clamp 2.5), affordances,
+  _poll_engine C4 pump (231-239).
+- `scripts/SaveManager.gd`: v14, chained migrations, offline
+  real-tick resolution (1s=1tick=1mo, 8h cap, 60s floor, vigil).
+- `scripts/ContentDB.gd`: loads + validates all data JSON.
+- `scripts/UIManager.gd`: HUD/topbar/toasts/floaters (pool 12,
+  tagged coalesce)/banner/chronicle ring.
+- `scripts/UITheme.gd`: code-built theme, ink + parchment skins.
+- `scripts/BigNumber.gd`: mantissa+exponent math (silent gap-drop>15).
+- `data/*.json` + `tools/gen_*.py` (generator owns output, never
+  hand-edit): realms (50), guardians (7), zones3d (9), leylines (8),
+  flight (r24), beasts/gear/techniques/origins/reveal/prestige.
+- `tests/` (33 files): SceneTree headless suites, `p22_sweep.ps1`
+  runner, CSV ground truth `docs/qa/p22/sweep_summary.csv`.
+- `tools/`: run.ps1 (gate/test/export-win), p22_sweep, p26_pretag,
+  repo_audit, g2_first_session (first-session driver), probes
+  (deleted after use), git-hooks/pre-commit (// guard).
+- `scenes/Main.tscn`: UI tree (TopBar/Dock/Rail/PanelTabs×9/
+  Chronicle/Coach/Title/Help/Veil/FloatLayer) + WorldViewport.
+- `.github/workflows/gate.yml`: gate + FAST_SUITES on push
+  (self/bignum/save_robustness/pacing_pin; bench/soak local-only).
+
+## 7. Standing rules (R-S1–R-S22; full text: `docs/adr/STANDING_RULES.md`)
+
+R-S1 exit codes authoritative · R-S7 power constants name their scale
+· R-S8 CSV beats chat arithmetic · R-S9 verify from raw bytes ·
+R-S11 persistence classes (soul/world/runtime) · R-S12 rule-11 cites
+for moved assertions · R-S13 branch-guarded defaults (bit-identity) ·
+R-S16 one-commit ledgers · R-S18 sampling-alias vigilance ·
+R-S19 release-qualified phase labels · R-S20 probes must demonstrate
+they can fail · R-S21 grep identifiers before naming · R-S22 captures
+settle or record transients. (One-line glosses; the file binds.)
+
+## 8. Key numbers (all measured, all cited in reports)
+
+73038/13 pinned · premium 71704/12 · tempered 73008/13 · heaven
+overpowered 1,311,714/255 · switch-bot 72,984/13 (−54, deviation
+insurance) · ley-line opt-in 72,844/13 (−0.27%, structural) ·
+plateau gate Δ(240→480)≤max(150,25%×Δ(0→240)) · bench 50k<5s idle-iron
+· PCK 12,653,196 · 20 actions · 9 tabs · 43 achievements · 39 beasts ·
+7 gears · 5 arts · 4 pills · 3 talents · 3 soul paths · 3 Dao nodes.
+
+## 9. Operating instructions (this machine)
+
+- Full sweep: `powershell -ExecutionPolicy Bypass -File tools\p22_sweep.ps1`
+  (NEVER with soak concurrently). Ground truth:
+  `docs/qa/p22/sweep_summary.csv`.
+- Export: `powershell -ExecutionPolicy Bypass -File tools\run.ps1 export-win`
+  (ALWAYS after version bump — V3 lesson, twice learned).
+- Audit: `tools\repo_audit.ps1` (F2–F10). Pretag: `tools\p26_pretag.ps1`
+  (V1–V6). First session: `tools\g2_first_session.gd` (display run).
+- Single suite: `& $ENG --headless --path $P -s res://tests/<suite>.gd`
+  (exit 0 = pass; quit(_failures)).
+- Hazards: PowerShell 5.1 (no `&&`, case-insensitive, ANSI script read —
+  no non-ASCII in .ps1); byte-safe UTF-8 no BOM; `//` illegal in .gd
+  (hook rejects); `match` reserved; `//` in URLs exempt; canvas≠window
+  under canvas_items/expand; pin `root.size` + `content_scale_size`
+  headless; virgin rate caches read 1.0 (settle via no-op
+  `set_gear_mult(1.0)`); direct var sets skip recompute (use real paths).
+- Conventions: flat scripts, no class_name, preload consts, generator
+  owns data, exit codes authoritative, probes deleted after use,
+  one-commit ledgers, tag→rev-parse-gate→push, CONFIRM×2 for releases.
+
+## 10. Open loops (as of this codex — verify against tree/DECISIONS)
+
+1. Perception audit D1–D9 decision ticks awaited (owner picks A/B;
+   `docs/audit/DECISION_SHEET.md`). Likely shape: 1.1.0 Feel Pass.
+2. R1 `compute_offline_gains` slated DELETE in 1.0.1 housekeeping;
+   R2 scales annotate-dead. (Time-model dispositions.)
+3. CI first green run on the release tree (unverified from here).
+4. Play journal declined; P4 rebalance runbook STAYS ARMED
+   (journal-justified, signed-off, one commit, re-anchor pin).
+5. U-ledger (d) resolved by decision; door open post-1.0.
+6. Ink veil-text: closed as capture hygiene (R-S22); G2 ink capture
+   step stands if it ever reproduces in untampered play.
+7. Freeze (G3) still in force: scripts/scenes/data/gameplay frozen;
+   tests/tools/docs/.github exempt.
+
+## 11. Doc index (read in this order for depth)
+
+AGENTS.md (constitution) → docs/adr/STANDING_RULES.md →
+docs/adr/ONE_POINT_ZERO_DEFINITION.md (U-ledger, G1–G6) →
+docs/adr/028_FEEL_PASS_ADR.md (sunset, P4 runbook) →
+docs/tuning/TUNING_INVENTORY.md (constants table) →
+docs/architecture/TIME_SPEED_MODEL.md (clocks, W1–W6, risks) →
+docs/audit/PERCEPTION_GAP.md + DECISION_SHEET.md + captures/
+(22 PNGs) → PHASE_*.md (per-release evidence) →
+QA_ROUND3_REPORT.md → docs/agent/JOURNAL.md (flight recorder) →
+tools/g2_first_session.gd (plays the game for you).
+Per-system ADRs: M1_MIGRATION, P23_WORLD + COUPLING, P24_PRESENCE,
+P25_ARENA + COMBAT_DESIGN, P26_ATTUNEMENT (ley-lines), P27_UI.
+Reports number P0–P28 + M2-M5 + Round 1/2/3 (see §3 for the map).
